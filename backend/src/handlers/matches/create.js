@@ -6,8 +6,15 @@ const { withAuth } = require("../../lib/auth");
 const { byId } = require("../../lib/games");
 const { hashPassword, stripSecret, validatePassword, ttlForStatus } = require("../../lib/matches");
 
-function displayName(userId, claims) {
+function sanitizeName(v) {
+  if (typeof v !== "string") return null;
+  const s = v.trim().slice(0, 64);
+  return s || null;
+}
+
+function displayName(userId, claims, body) {
   return (
+    sanitizeName(body?.displayName) ||
     claims?.username ||
     claims?.preferred_username ||
     claims?.name ||
@@ -16,7 +23,9 @@ function displayName(userId, claims) {
   );
 }
 
-function avatarUrl(claims) {
+function avatarUrl(claims, body) {
+  const fromBody = typeof body?.avatarUrl === "string" ? body.avatarUrl.trim() : "";
+  if (fromBody && /^https?:\/\//i.test(fromBody)) return fromBody.slice(0, 512);
   return claims?.picture || claims?.image_url || claims?.imageUrl || null;
 }
 
@@ -48,8 +57,8 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
     createdAt: new Date().toISOString(),
     createdBy: userId,
     players: [userId],
-    usernames: { [userId]: displayName(userId, claims) },
-    avatars: avatarUrl(claims) ? { [userId]: avatarUrl(claims) } : {},
+    usernames: { [userId]: displayName(userId, claims, body) },
+    avatars: avatarUrl(claims, body) ? { [userId]: avatarUrl(claims, body) } : {},
     maxPlayers,
     minPlayers: game.minPlayers,
     version: 0,
