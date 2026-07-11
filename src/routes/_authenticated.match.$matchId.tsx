@@ -136,7 +136,22 @@ function LobbyView({
         <Link to="/lobby" className="underline hover:text-white">← Lobby</Link>
       </div>
       <h1 className="font-serif text-4xl font-bold tracking-tight text-amber-100">Charlotte's Web</h1>
-      <p className="mt-1 text-sm text-white/60">Waiting for players. Match {shortId(match.matchId)}.</p>
+      <p className="mt-1 text-sm text-white/60">Waiting for players.</p>
+      {match.code && (
+        <div className="mt-4 inline-flex flex-col items-start rounded-lg border border-amber-500/40 bg-black/30 px-4 py-3">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-amber-200/70">
+            Table code — share to invite
+          </span>
+          <button
+            type="button"
+            onClick={() => { void navigator.clipboard?.writeText(match.code!); }}
+            className="mt-1 font-mono text-2xl tracking-[0.4em] text-amber-100 hover:text-white"
+            title="Click to copy"
+          >
+            {match.code}
+          </button>
+        </div>
+      )}
 
       <div className="mt-6 rounded-xl border border-amber-900/40 bg-emerald-950/40 p-6 shadow-xl backdrop-blur">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-200/70">

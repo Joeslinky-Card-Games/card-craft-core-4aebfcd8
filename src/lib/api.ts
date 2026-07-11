@@ -61,6 +61,7 @@ export type Game = {
 
 export type Match = {
   matchId: string;
+  code?: string;
   gameId: string;
   status: "open" | "in-progress" | "round-complete" | "complete";
   createdAt: string;

@@ -4,7 +4,13 @@ const { ddb, tables } = require("../../lib/dynamo");
 const { created, badRequest, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { byId } = require("../../lib/games");
-const { hashPassword, stripSecret, validatePassword, ttlForStatus } = require("../../lib/matches");
+const {
+  hashPassword,
+  stripSecret,
+  validatePassword,
+  ttlForStatus,
+  generateCode,
+} = require("../../lib/matches");
 
 function sanitizeName(v) {
   if (typeof v !== "string") return null;
@@ -50,8 +56,36 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
     passwordHash = hashPassword(String(body.password).trim());
   }
 
+  const matchId = randomUUID();
+
+  // Reserve a unique short code by conditional put on the codes table.
+  // On the (rare) collision we retry with a fresh code.
+  let code;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const candidate = generateCode();
+    try {
+      await ddb.send(new PutCommand({
+        TableName: tables.matchCodes,
+        Item: { code: candidate, matchId, createdAt: new Date().toISOString(), ttl: ttlForStatus("open") },
+        ConditionExpression: "attribute_not_exists(code)",
+      }));
+      code = candidate;
+      break;
+    } catch (err) {
+      if (err.name !== "ConditionalCheckFailedException") {
+        console.error("code reservation failed", err);
+        return serverError();
+      }
+    }
+  }
+  if (!code) {
+    console.error("could not allocate unique code after retries");
+    return serverError();
+  }
+
   const match = {
-    matchId: randomUUID(),
+    matchId,
+    code,
     gameId,
     status: "open",
     createdAt: new Date().toISOString(),

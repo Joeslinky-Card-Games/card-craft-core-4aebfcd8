@@ -9,6 +9,7 @@ const ddb = DynamoDBDocumentClient.from(client, {
 const tables = {
   users: process.env.USERS_TABLE,
   matches: process.env.MATCHES_TABLE,
+  matchCodes: process.env.MATCH_CODES_TABLE,
   stats: process.env.STATS_TABLE,
 };
 

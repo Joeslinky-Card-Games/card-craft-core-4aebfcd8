@@ -100,6 +100,11 @@ function LobbyPage() {
                           Private
                         </span>
                       )}
+                        {m.code && (
+                          <span className="ml-2 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] tracking-widest text-muted-foreground">
+                            {m.code}
+                          </span>
+                        )}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {m.status} · {m.players.length}/{m.maxPlayers} players · created {new Date(m.createdAt).toLocaleString()}

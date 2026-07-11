@@ -24,6 +24,7 @@ Globals:
       Variables:
         USERS_TABLE: !Ref UsersTable
         MATCHES_TABLE: !Ref MatchesTable
+        MATCH_CODES_TABLE: !Ref MatchCodesTable
         STATS_TABLE: !Ref StatsTable
         CLERK_ISSUER: !Ref ClerkIssuer
         CLERK_AUDIENCE: !Ref ClerkAudience
@@ -63,6 +64,18 @@ Resources:
             - { AttributeName: status, KeyType: HASH }
             - { AttributeName: createdAt, KeyType: RANGE }
           Projection: { ProjectionType: ALL }
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  MatchCodesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: code, AttributeType: S }
+      KeySchema:
+        - { AttributeName: code, KeyType: HASH }
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
@@ -153,6 +166,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref MatchesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchCodesTable
       Events:
         Api:
           Type: HttpApi
@@ -192,6 +207,24 @@ Resources:
             ApiId: !Ref HttpApi
             Method: POST
             Path: /matches/{matchId}/join
+
+  JoinMatchByCodeFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/join-by-code.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MatchCodesTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches/join-by-code
 
   MatchActionFn:
     Type: AWS::Serverless::Function
