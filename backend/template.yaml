@@ -1,0 +1,204 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Card game platform backend (API Gateway + Lambda + DynamoDB)
+
+Parameters:
+  ClerkIssuer:
+    Type: String
+    Description: Clerk JWT issuer URL, e.g. https://your-app.clerk.accounts.dev
+  ClerkAudience:
+    Type: String
+    Default: ""
+    Description: Optional Clerk JWT audience claim
+  Stage:
+    Type: String
+    Default: prod
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Architectures: [arm64]
+    Environment:
+      Variables:
+        USERS_TABLE: !Ref UsersTable
+        MATCHES_TABLE: !Ref MatchesTable
+        STATS_TABLE: !Ref StatsTable
+        CLERK_ISSUER: !Ref ClerkIssuer
+        CLERK_AUDIENCE: !Ref ClerkAudience
+
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Stage
+      CorsConfiguration:
+        AllowOrigins: ["*"]
+        AllowHeaders: ["content-type", "authorization"]
+        AllowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: userId, AttributeType: S }
+      KeySchema:
+        - { AttributeName: userId, KeyType: HASH }
+
+  MatchesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: matchId, AttributeType: S }
+        - { AttributeName: status, AttributeType: S }
+        - { AttributeName: createdAt, AttributeType: S }
+      KeySchema:
+        - { AttributeName: matchId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: byStatus
+          KeySchema:
+            - { AttributeName: status, KeyType: HASH }
+            - { AttributeName: createdAt, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+
+  StatsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: userId, AttributeType: S }
+        - { AttributeName: gameId, AttributeType: S }
+        - { AttributeName: rating, AttributeType: N }
+      KeySchema:
+        - { AttributeName: userId, KeyType: HASH }
+        - { AttributeName: gameId, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        - IndexName: byGame
+          KeySchema:
+            - { AttributeName: gameId, KeyType: HASH }
+            - { AttributeName: rating, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+
+  # ---------- Games ----------
+  ListGamesFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/games/list.handler
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /games } }
+
+  GetGameFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/games/get.handler
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /games/{gameId} } }
+
+  # ---------- Matches ----------
+  ListMatchesFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/list.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref MatchesTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /matches } }
+
+  CreateMatchFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/create.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref MatchesTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: POST, Path: /matches } }
+
+  GetMatchFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/get.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref MatchesTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /matches/{matchId} } }
+
+  JoinMatchFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/join.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref MatchesTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: POST, Path: /matches/{matchId}/join } }
+
+  MatchActionFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/action.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref MatchesTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: POST, Path: /matches/{matchId}/action } }
+
+  # ---------- Profile ----------
+  GetProfileFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/profile/get.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref UsersTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /profile } }
+
+  UpdateProfileFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/profile/update.handler
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref UsersTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: PUT, Path: /profile } }
+
+  # ---------- Stats ----------
+  GetMyStatsFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/stats/me.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref StatsTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /stats/me } }
+
+  LeaderboardFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/stats/leaderboard.handler
+      Policies:
+        - DynamoDBReadPolicy: { TableName: !Ref StatsTable }
+      Events:
+        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /stats/leaderboard } }
+
+Outputs:
+  ApiUrl:
+    Description: HTTP API invoke URL
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  UsersTableName:
+    Value: !Ref UsersTable
+  MatchesTableName:
+    Value: !Ref MatchesTable
+  StatsTableName:
+    Value: !Ref StatsTable

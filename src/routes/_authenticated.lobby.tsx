@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { endpoints, API_URL, type Game } from "@/lib/api";
 import { MOCK_GAMES } from "@/lib/mock-games";
 
 export const Route = createFileRoute("/_authenticated/lobby")({
@@ -12,6 +14,21 @@ export const Route = createFileRoute("/_authenticated/lobby")({
 });
 
 function LobbyPage() {
+  const query = useQuery({
+    queryKey: ["games"],
+    queryFn: () => endpoints.listGames(),
+    enabled: Boolean(API_URL),
+  });
+
+  const games: Game[] = query.data?.games ?? MOCK_GAMES.map((g) => ({
+    id: g.id,
+    name: g.name,
+    description: g.description,
+    minPlayers: 2,
+    maxPlayers: 4,
+    status: g.status,
+  }));
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-8 flex items-end justify-between">
@@ -24,7 +41,7 @@ function LobbyPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {MOCK_GAMES.map((game) => (
+        {games.map((game) => (
           <div
             key={game.id}
             className="flex flex-col justify-between rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary/40"
@@ -33,7 +50,9 @@ function LobbyPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-card-foreground">{game.name}</h2>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  {game.players}
+                  {game.minPlayers === game.maxPlayers
+                    ? `${game.maxPlayers} players`
+                    : `${game.minPlayers}–${game.maxPlayers} players`}
                 </span>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{game.description}</p>
@@ -51,11 +70,10 @@ function LobbyPage() {
       </div>
 
       <p className="mt-10 text-xs text-muted-foreground">
-        Backend is stubbed. Real tables will be served by the AWS API — see{" "}
+        {API_URL ? "Live from the AWS API." : "AWS API not configured — showing local placeholders."}{" "}
         <Link to="/profile" className="underline hover:text-foreground">
-          your profile
-        </Link>{" "}
-        for account details.
+          View profile
+        </Link>
       </p>
     </main>
   );
