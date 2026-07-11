@@ -28,7 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 export const Route = createFileRoute("/_authenticated/match/$matchId")({
   head: () => ({
     meta: [
-      { title: "Match — Card Table" },
+      { title: "Match — ArcadiumX" },
       { name: "description", content: "Live Charlotte's Web match." },
     ],
   }),

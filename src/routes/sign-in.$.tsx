@@ -5,8 +5,8 @@ import { SiteHeader } from "@/components/site-header";
 export const Route = createFileRoute("/sign-in/$")({
   head: () => ({
     meta: [
-      { title: "Sign in — Card Table" },
-      { name: "description", content: "Sign in to your Card Table account." },
+      { title: "Sign in — ArcadiumX" },
+      { name: "description", content: "Sign in to your ArcadiumX account." },
     ],
   }),
   component: SignInPage,

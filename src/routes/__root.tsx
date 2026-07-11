@@ -79,13 +79,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
-      { title: "Card Table — Play classic card games online" },
+      { title: "ArcadiumX — Play classic card games online" },
       {
         name: "description",
         content:
-          "Card Table is an online platform for classic card games. Sign in and join a table to play with friends.",
+          "ArcadiumX is an online platform for classic card games. Sign in and join a table to play with friends.",
       },
-      { property: "og:title", content: "Card Table — Play classic card games online" },
+      { property: "og:title", content: "ArcadiumX — Play classic card games online" },
       {
         property: "og:description",
         content: "Play Hearts, Spades, Poker and more with friends online.",

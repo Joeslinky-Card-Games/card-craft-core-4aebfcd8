@@ -4,8 +4,8 @@ import { useUser } from "@clerk/tanstack-react-start";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Profile — Card Table" },
-      { name: "description", content: "Your Card Table account." },
+      { title: "Profile — ArcadiumX" },
+      { name: "description", content: "Your ArcadiumX account." },
     ],
   }),
   component: ProfilePage,

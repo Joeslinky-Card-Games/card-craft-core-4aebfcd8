@@ -12,7 +12,7 @@ import { JoinDialog } from "@/components/lobby/JoinDialog";
 export const Route = createFileRoute("/_authenticated/lobby")({
   head: () => ({
     meta: [
-      { title: "Lobby — Card Table" },
+      { title: "Lobby — ArcadiumX" },
       { name: "description", content: "Browse and join card game tables." },
     ],
   }),

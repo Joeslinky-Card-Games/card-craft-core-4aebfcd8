@@ -105,7 +105,7 @@ html, body {
 }
 
 .dark {
-  /* Card-table dark theme: deep charcoal-green baize with warm amber accents. */
+  /* ArcadiumX dark theme: deep charcoal-green baize with warm amber accents. */
   --background: oklch(0.18 0.03 160);
   --foreground: oklch(0.96 0.02 85);
   --card: oklch(0.24 0.035 160);
