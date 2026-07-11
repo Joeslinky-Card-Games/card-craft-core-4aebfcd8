@@ -4,6 +4,7 @@ const { ddb, tables } = require("../../lib/dynamo");
 const { created, badRequest, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { byId } = require("../../lib/games");
+const { hashPassword, stripSecret, validatePassword } = require("../../lib/matches");
 
 function displayName(userId, claims) {
   return (
@@ -32,6 +33,14 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
     ? Math.max(game.minPlayers, Math.min(game.maxPlayers, requestedMax))
     : game.maxPlayers;
 
+  const visibility = body.visibility === "private" ? "private" : "public";
+  let passwordHash;
+  if (visibility === "private") {
+    const err = validatePassword(body.password);
+    if (err) return badRequest(err);
+    passwordHash = hashPassword(String(body.password).trim());
+  }
+
   const match = {
     matchId: randomUUID(),
     gameId,
@@ -44,10 +53,12 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
     maxPlayers,
     minPlayers: game.minPlayers,
     version: 0,
+    visibility,
+    ...(passwordHash ? { passwordHash } : {}),
   };
   try {
     await ddb.send(new PutCommand({ TableName: tables.matches, Item: match }));
-    return created(match);
+    return created(stripSecret(match));
   } catch (err) {
     console.error(err);
     return serverError();
