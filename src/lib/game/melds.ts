@@ -113,7 +113,13 @@ function combinations(arr: number[], k: number): number[][] {
 export function autoArrange(
   hand: string[],
   wildRank: string | null | undefined,
-): { melds: string[][]; discard: string | null; complete: boolean } {
+): {
+  melds: string[][];
+  discard: string | null;
+  complete: boolean;
+  goOutMelds?: string[][];
+  goOutDiscard?: string;
+} {
   const n = hand.length;
   if (n === 0) return { melds: [], discard: null, complete: false };
 
@@ -132,20 +138,25 @@ export function autoArrange(
     }
   }
 
-  // Try each discard candidate (prefer highest-point card as discard tie-breaker).
+  // Independently check for a complete lay-down (go-out) covering all cards
+  // except one discard. Prefer the highest-point card as the discard.
   const discardOrder = [...indices].sort((a, b) => cardPoints(hand[b]) - cardPoints(hand[a]));
-
+  let goOutMelds: string[][] | undefined;
+  let goOutDiscard: string | undefined;
   for (const d of discardOrder) {
     const target = ((1 << n) - 1) ^ (1 << d);
     const covered = cover(target, candidates);
     if (covered) {
-      return { melds: covered.map((m) => m.cards), discard: hand[d], complete: true };
+      goOutMelds = covered.map((m) => m.cards);
+      goOutDiscard = hand[d];
+      break;
     }
   }
 
-  // No complete lay-down. Find the arrangement that MINIMIZES unmelded points
-  // (i.e. reorganize even if that means smaller melds, when lower-scoring cards
-  // get melded instead).
+  // Always compute the display arrangement that MINIMIZES unmelded points,
+  // independent of whether a complete lay-down exists. This way the hand
+  // display reflects the player's best keep even when going out isn't allowed
+  // (e.g. someone else already went out this round).
   const cardPts = hand.map((c) => cardPoints(c));
   // Precompute point value of each candidate's melded cards.
   const cands = candidates.map((c) => ({
@@ -178,7 +189,13 @@ export function autoArrange(
     }
   };
   dfs(0, 0, 0, []);
-  return { melds: bestPicked.map((m) => m.cards), discard: null, complete: false };
+  return {
+    melds: bestPicked.map((m) => m.cards),
+    discard: goOutDiscard ?? null,
+    complete: Boolean(goOutMelds),
+    goOutMelds,
+    goOutDiscard,
+  };
 }
 
 function sumBitsPts(mask: number, pts: number[]): number {
