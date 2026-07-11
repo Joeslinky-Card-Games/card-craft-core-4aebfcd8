@@ -287,7 +287,13 @@ function GameView({
             {" "}Final turns remaining: {match.remainingFinalTurns}.
           </span>
         ) : isMyTurn ? (
-          <span className="text-amber-200">Your turn — {match.hasDrawn ? "tap a card to discard, or lay down" : "draw a card"}.</span>
+          <span className="text-amber-200">Your turn — {
+            !match.hasDrawn
+              ? "draw a card"
+              : canLayDown
+                ? "tap a card to discard, or lay down to go out"
+                : "tap a card to discard"
+          }.</span>
         ) : (
           <span className="text-white/70">Waiting on {displayName(match, currentUser, userId)}…</span>
         )}
@@ -369,7 +375,13 @@ function GameView({
               </AnimatePresence>
               {sorted.length === 0 && <p className="self-center text-sm text-white/60">No cards in hand.</p>}
               {sorted.length > 0 && unmelded.length === 0 && arrangement.melds.length > 0 && (
-                <p className="self-center text-sm text-amber-200/80">All cards melded — lay down to go out.</p>
+                canLayDown ? (
+                  <p className="self-center text-sm text-amber-200/80">All cards melded — lay down to go out.</p>
+                ) : (
+                  <p className="self-center text-sm text-amber-200/80">
+                    All cards fit into melds — tap a card to discard (a meld will be broken).
+                  </p>
+                )
               )}
             </div>
           </div>
