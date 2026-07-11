@@ -8,7 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { API_URL, endpoints, useApi, type Game, type MatchView } from "@/lib/api";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Alphabet mirrors backend generateCode (no ambiguous 0/O/1/I/L).
+const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const CODE_LENGTH = 6;
+const CODE_RE = new RegExp(`^[${CODE_ALPHABET}]{${CODE_LENGTH}}$`);
+
+function normalizeCodeInput(raw: string): string {
+  return raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, CODE_LENGTH);
+}
 
 export function JoinDialog({
   open,
@@ -26,7 +36,7 @@ export function JoinDialog({
   const api = useApi();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [tableId, setTableId] = useState("");
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
 
   const matchesQuery = useQuery({
@@ -37,11 +47,22 @@ export function JoinDialog({
   });
 
   const joinMut = useMutation({
-    mutationFn: (input: { matchId: string; password?: string }) =>
-      api<MatchView>(`/matches/${input.matchId}/join`, {
+    mutationFn: (input: { matchId?: string; code?: string; password?: string }) => {
+      const payload = {
+        ...(identity ?? {}),
+        ...(input.password ? { password: input.password } : {}),
+      };
+      if (input.code) {
+        return api<MatchView>(`/matches/join-by-code`, {
+          method: "POST",
+          body: { ...payload, code: input.code },
+        });
+      }
+      return api<MatchView>(`/matches/${input.matchId}/join`, {
         method: "POST",
-        body: { ...(identity ?? {}), ...(input.password ? { password: input.password } : {}) },
-      }),
+        body: payload,
+      });
+    },
     onSuccess: (m) => {
       qc.invalidateQueries({ queryKey: ["matches", "open"] });
       qc.invalidateQueries({ queryKey: ["matches", "mine"] });
@@ -51,8 +72,7 @@ export function JoinDialog({
   });
 
   const openMatches = matchesQuery.data?.matches ?? [];
-  const trimmedId = tableId.trim();
-  const idValid = UUID_RE.test(trimmedId);
+  const codeValid = CODE_RE.test(code);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,7 +85,7 @@ export function JoinDialog({
         <Tabs defaultValue="browse" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="browse">Browse open tables</TabsTrigger>
-            <TabsTrigger value="private">Join by ID</TabsTrigger>
+            <TabsTrigger value="private">Join by code</TabsTrigger>
           </TabsList>
 
           <TabsContent value="browse" className="mt-3">
@@ -107,17 +127,22 @@ export function JoinDialog({
 
           <TabsContent value="private" className="mt-3 space-y-4">
             <div>
-              <Label htmlFor="table-id">Table ID</Label>
+              <Label htmlFor="table-code">Table code</Label>
               <Input
-                id="table-id"
-                value={tableId}
-                onChange={(e) => setTableId(e.target.value)}
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                className="mt-1 font-mono text-xs"
+                id="table-code"
+                value={code}
+                onChange={(e) => setCode(normalizeCodeInput(e.target.value))}
+                placeholder="ABC123"
+                maxLength={CODE_LENGTH}
+                className="mt-1 text-center font-mono text-lg tracking-[0.4em] uppercase"
                 autoComplete="off"
+                inputMode="text"
               />
-              {tableId && !idValid && (
-                <p className="mt-1 text-xs text-destructive">Not a valid table ID.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                6 characters. Ask the host to share the code.
+              </p>
+              {code.length > 0 && !codeValid && code.length === CODE_LENGTH && (
+                <p className="mt-1 text-xs text-destructive">Invalid code.</p>
               )}
             </div>
             <div>
@@ -141,10 +166,10 @@ export function JoinDialog({
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button
-                disabled={!idValid || joinMut.isPending}
+                disabled={!codeValid || joinMut.isPending}
                 onClick={() =>
                   joinMut.mutate({
-                    matchId: trimmedId,
+                    code,
                     password: password.trim() || undefined,
                   })
                 }
