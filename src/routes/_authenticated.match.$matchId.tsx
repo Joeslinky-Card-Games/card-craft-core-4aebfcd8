@@ -6,6 +6,7 @@ import { useUser } from "@clerk/tanstack-react-start";
 import { useApi, type GameAction, type MatchView } from "@/lib/api";
 import { PlayingCard, CardBack, EmptyCardSlot } from "@/components/game/PlayingCard";
 import { sortHand, cardPoints } from "@/lib/game/cards";
+import { autoArrange } from "@/lib/game/melds";
 
 export const Route = createFileRoute("/_authenticated/match/$matchId")({
   head: () => ({
@@ -236,6 +237,19 @@ function GameView({
     resetMeld();
   };
 
+  const handleAutoArrange = () => {
+    const result = autoArrange(myHand, wildRank);
+    if (result.complete && result.discard) {
+      onAction({ type: "lay-down", melds: result.melds, discard: result.discard });
+      resetMeld();
+      return;
+    }
+    // Partial: stage the melds it did find so the user can adjust.
+    setMode("meld");
+    setStagedMelds(result.melds);
+    setCurrentMeld([]);
+  };
+
   return (
     <main className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden">
       {/* Felt table backdrop */}
@@ -304,15 +318,30 @@ function GameView({
           </h2>
           <div className="flex gap-2">
             {mode === "idle" ? (
-              <button
-                disabled={!isMyTurn || !match.hasDrawn || Boolean(goneOut) || roundComplete}
-                onClick={() => setMode("meld")}
-                className="rounded-md border border-amber-300/60 px-3 py-1 text-xs font-medium text-amber-200 hover:bg-amber-300/10 disabled:opacity-40"
-              >
-                Lay down…
-              </button>
+              <>
+                <button
+                  disabled={!isMyTurn || !match.hasDrawn || Boolean(goneOut) || roundComplete}
+                  onClick={handleAutoArrange}
+                  className="rounded-md bg-amber-400 px-3 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
+                >
+                  Auto-arrange
+                </button>
+                <button
+                  disabled={!isMyTurn || !match.hasDrawn || Boolean(goneOut) || roundComplete}
+                  onClick={() => setMode("meld")}
+                  className="rounded-md border border-amber-300/60 px-3 py-1 text-xs font-medium text-amber-200 hover:bg-amber-300/10 disabled:opacity-40"
+                >
+                  Manual…
+                </button>
+              </>
             ) : (
               <>
+                <button
+                  onClick={handleAutoArrange}
+                  className="rounded-md border border-amber-300/60 px-3 py-1 text-xs text-amber-200 hover:bg-amber-300/10"
+                >
+                  Auto
+                </button>
                 <button
                   disabled={currentMeld.length < 3}
                   onClick={commitCurrentMeld}
