@@ -230,6 +230,13 @@ function LobbyView({
         )}
         {startError && <p className="mt-2 text-sm text-rose-300">{startError}</p>}
       </div>
+      <ChatPanel
+        match={match}
+        userId={userId}
+        onSend={onSendChat}
+        pending={chatPending}
+        error={chatError}
+      />
     </main>
   );
 }
