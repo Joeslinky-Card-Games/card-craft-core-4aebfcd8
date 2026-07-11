@@ -696,6 +696,7 @@ function TableArea({
   roundComplete,
   matchComplete,
   viewerDone,
+  finalTurnDone,
   discardTop,
   wildRank,
   onAction,
@@ -711,6 +712,7 @@ function TableArea({
   roundComplete: boolean;
   matchComplete: boolean;
   viewerDone: boolean;
+  finalTurnDone: Set<string>;
   discardTop: string | null;
   wildRank: string | null;
   onAction: (a: GameAction) => void;
