@@ -1051,7 +1051,7 @@ function WentOutAnnouncement({
         </h2>
         <p className="mt-2 text-sm text-white/80">
           {remaining > 0
-            ? `Everyone else has ${remaining === 1 ? "one final turn" : `${remaining} final turn${remaining === 1 ? "" : "s"}`} before the round ends.`
+            ? "Everyone else has one final turn before the round ends."
             : "The round is ending now."}
         </p>
         <button
