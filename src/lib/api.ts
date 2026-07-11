@@ -67,6 +67,7 @@ export type Match = {
   createdBy: string;
   players: string[];
   usernames?: Record<string, string>;
+  avatars?: Record<string, string>;
   maxPlayers: number;
   minPlayers?: number;
   version?: number;

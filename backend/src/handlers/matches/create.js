@@ -15,6 +15,10 @@ function displayName(userId, claims) {
   );
 }
 
+function avatarUrl(claims) {
+  return claims?.picture || claims?.image_url || claims?.imageUrl || null;
+}
+
 exports.handler = withAuth(async (event, { userId, claims }) => {
   let body;
   try { body = JSON.parse(event.body || "{}"); } catch { return badRequest("Invalid JSON"); }
@@ -36,6 +40,7 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
     createdBy: userId,
     players: [userId],
     usernames: { [userId]: displayName(userId, claims) },
+    avatars: avatarUrl(claims) ? { [userId]: avatarUrl(claims) } : {},
     maxPlayers,
     minPlayers: game.minPlayers,
     version: 0,
