@@ -4,21 +4,17 @@
 function redactForUser(match, userId) {
   const view = { ...match };
   const roundOver = match.status === "round-complete" || match.status === "complete";
-  // A viewer who has already gone out / laid down is effectively a spectator
-  // for the rest of the round — reveal every hand to them so they can follow
-  // the remaining final turns.
-  const viewerDone =
-    Boolean(match.goneOutBy && match.goneOutBy === userId) ||
-    Boolean(match.laidMelds && match.laidMelds[userId]);
   // Once someone goes out, each remaining player gets one final turn. After a
-  // player ends that final turn their hand is no longer secret.
+  // player ends that final turn their hand is no longer secret — regardless of
+  // whether the viewer themselves has gone out. A player still mid-final-turn
+  // keeps their hand hidden.
   const finalTurnDone = finalTurnDonePlayers(match);
   if (match.hands) {
     const handCounts = {};
     const hands = {};
     for (const [p, cards] of Object.entries(match.hands)) {
       handCounts[p] = cards.length;
-      if (p === userId || roundOver || viewerDone || finalTurnDone.has(p)) hands[p] = cards;
+      if (p === userId || roundOver || finalTurnDone.has(p)) hands[p] = cards;
     }
     view.hands = hands;
     view.handCounts = handCounts;

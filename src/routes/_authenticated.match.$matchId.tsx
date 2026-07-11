@@ -765,7 +765,7 @@ function TableArea({
               wentOut={Boolean(match.laidMelds?.[p])}
               laidMelds={match.laidMelds?.[p]}
               hand={match.hands?.[p]}
-              handVisible={roundComplete || matchComplete || viewerDone || finalTurnDone.has(p)}
+              handVisible={roundComplete || matchComplete || finalTurnDone.has(p)}
               wildRank={wildRank}
             />
           </div>
@@ -971,7 +971,17 @@ function LaidMeldsDialog({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  const displayCards = hand && hand.length > 0 ? sortHand(hand, wildRank) : [];
+  // Auto-arrange the remaining (un-laid) hand so viewers can see potential
+  // melds vs deadwood at a glance to estimate points.
+  const handArrangement = useMemo(
+    () => (hand && hand.length > 0 ? autoArrange(hand, wildRank) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hand ? hand.join("|") : "", wildRank],
+  );
+  const handMelds = handArrangement?.melds ?? [];
+  const meldedInHand = new Set(handMelds.flat());
+  const deadwood = hand ? sortHand(hand.filter((c) => !meldedInHand.has(c)), wildRank) : [];
+  const deadwoodPoints = deadwood.reduce((s, c) => s + cardPoints(c), 0);
   if (typeof document === "undefined") return null;
   return createPortal(
     <div
@@ -1018,11 +1028,34 @@ function LaidMeldsDialog({
             ))}
           </div>
         )}
-        {displayCards.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-start justify-center gap-2">
-            {displayCards.map((c) => (
-              <PlayingCard key={c} id={c} wildRank={wildRank} />
-            ))}
+        {handMelds.length > 0 && (
+          <div className="mt-4">
+            <div className="mb-2 text-[10px] uppercase tracking-wider text-white/50">
+              Potential melds in hand
+            </div>
+            <div className="flex flex-wrap items-start justify-center gap-3">
+              {handMelds.map((meld, i) => (
+                <div key={i} className="rounded-lg bg-emerald-900/30 px-2 py-1 ring-1 ring-white/20">
+                  <div className="flex -space-x-6 sm:-space-x-8">
+                    {orderMeldForDisplay(meld, wildRank).map((c) => (
+                      <PlayingCard key={c} id={c} wildRank={wildRank} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {deadwood.length > 0 && (
+          <div className="mt-4">
+            <div className="mb-2 text-[10px] uppercase tracking-wider text-white/50">
+              Deadwood · {deadwoodPoints} pt{deadwoodPoints === 1 ? "" : "s"}
+            </div>
+            <div className="flex flex-wrap items-start justify-center gap-2">
+              {deadwood.map((c) => (
+                <PlayingCard key={c} id={c} wildRank={wildRank} />
+              ))}
+            </div>
           </div>
         )}
       </motion.div>
