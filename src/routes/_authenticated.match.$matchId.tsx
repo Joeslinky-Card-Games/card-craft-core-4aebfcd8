@@ -469,7 +469,7 @@ function TableArea({
             <CardBack size="lg" count={match.stockCount} />
           </div>
           <button
-            disabled={!isMyTurn || match.hasDrawn || pending || Boolean(goneOut) || roundComplete}
+            disabled={!isMyTurn || match.hasDrawn || pending || roundComplete}
             onClick={() => onAction({ type: "draw-stock" })}
             className="rounded-full bg-amber-400 px-4 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
           >
@@ -496,7 +496,7 @@ function TableArea({
             </AnimatePresence>
           </div>
           <button
-            disabled={!isMyTurn || match.hasDrawn || !discardTop || pending || Boolean(goneOut) || roundComplete}
+            disabled={!isMyTurn || match.hasDrawn || !discardTop || pending || roundComplete}
             onClick={() => onAction({ type: "draw-discard" })}
             className="rounded-full bg-amber-400/90 px-4 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
           >
