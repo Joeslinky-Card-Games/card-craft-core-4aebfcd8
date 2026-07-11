@@ -1004,7 +1004,7 @@ function ChatPanel({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
+    <div className="fixed bottom-3 right-3 z-40 flex flex-col items-end sm:bottom-4 sm:right-4">
       {open && (
         <div className="mb-2 flex w-80 max-w-[calc(100vw-2rem)] flex-col rounded-2xl border border-amber-300/30 bg-emerald-950/95 shadow-2xl backdrop-blur">
           <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
@@ -1060,7 +1060,7 @@ function ChatPanel({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex items-center gap-2 rounded-full border border-amber-300/40 bg-black/60 px-4 py-2 text-sm font-semibold text-amber-100 shadow-lg backdrop-blur hover:bg-black/80"
+        className="relative flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-black/60 px-3 py-1.5 text-xs font-semibold text-amber-100 shadow-lg backdrop-blur hover:bg-black/80 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
       >
         <span>{open ? "Hide chat" : "Chat"}</span>
         {!open && unread > 0 && (
