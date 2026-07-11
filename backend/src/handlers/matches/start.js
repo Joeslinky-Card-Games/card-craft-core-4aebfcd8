@@ -4,6 +4,7 @@ const { ok, badRequest, notFound, forbidden, serverError } = require("../../lib/
 const { withAuth } = require("../../lib/auth");
 const { startMatch, startRound } = require("../../lib/game/engine");
 const { redactForUser } = require("../../lib/game/view");
+const { withRefreshedTtl } = require("../../lib/matches");
 
 exports.handler = withAuth(async (event, { userId }) => {
   const matchId = event.pathParameters?.matchId;
@@ -20,11 +21,12 @@ exports.handler = withAuth(async (event, { userId }) => {
     const base = startMatch({ matchId: match.matchId, players: match.players });
     const dealt = startRound(base, 1);
     // Preserve lobby metadata + bump version.
-    const next = {
+    let next = {
       ...match,
       ...dealt,
       version: expectedVersion + 1,
     };
+    next = withRefreshedTtl(next);
 
     try {
       await ddb.send(
