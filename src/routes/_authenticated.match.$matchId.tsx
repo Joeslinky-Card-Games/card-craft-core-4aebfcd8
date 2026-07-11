@@ -127,7 +127,18 @@ function MatchPage() {
   });
   const playAgainMut = useMutation({
     mutationFn: () => api<MatchView>(`/matches/${matchId}/play-again`, { method: "POST" }),
-    onSuccess: (data) => { qc.setQueryData(["match", matchId], data); },
+    onSuccess: (data) => {
+      // When everyone votes to play again, the backend allocates a new
+      // matchId and deletes the completed match row. Navigate to the new
+      // match so we're not pointing at a deleted record.
+      if (data.matchId && data.matchId !== matchId) {
+        qc.setQueryData(["match", data.matchId], data);
+        qc.removeQueries({ queryKey: ["match", matchId] });
+        navigate({ to: "/match/$matchId", params: { matchId: data.matchId } });
+        return;
+      }
+      qc.setQueryData(["match", matchId], data);
+    },
   });
   const chatMut = useMutation({
     mutationFn: (text: string) =>
