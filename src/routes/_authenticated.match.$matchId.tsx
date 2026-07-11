@@ -388,6 +388,7 @@ function TableArea({
   opponents,
   match,
   userId,
+  selfImage,
   currentUser,
   isMyTurn,
   pending,
@@ -400,6 +401,7 @@ function TableArea({
   opponents: string[];
   match: MatchView;
   userId: string;
+  selfImage: string | null;
   currentUser: string;
   isMyTurn: boolean;
   pending: boolean;
@@ -440,6 +442,7 @@ function TableArea({
       {/* Seats */}
       {seats.map(({ p, x, y }) => {
         const name = displayName(match, p, userId);
+        const img = avatarOf(match, p, userId, selfImage);
         return (
           <div
             key={p}
@@ -449,6 +452,7 @@ function TableArea({
             <SeatCard
               name={name}
               userId={p}
+              imageUrl={img}
               isTurn={p === currentUser}
               count={match.handCounts?.[p] ?? 0}
               score={match.scores?.[p] ?? 0}
@@ -460,55 +464,71 @@ function TableArea({
 
       {/* Center piles */}
       <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-6">
-        <div className="flex flex-col items-center gap-2">
-          <div className="relative">
-            {/* Stack shadow */}
-            <div className="absolute inset-0 translate-x-0.5 translate-y-0.5 rounded-lg bg-black/30 blur-[2px]" />
-            <CardBack size="lg" count={match.stockCount} />
-          </div>
-          <button
-            disabled={!isMyTurn || match.hasDrawn || pending || roundComplete}
-            onClick={() => onAction({ type: "draw-stock" })}
-            className="rounded-full bg-amber-400 px-4 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
-          >
-            Draw
-          </button>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="relative h-32 w-24">
-            <AnimatePresence mode="popLayout">
-              {discardTop ? (
-                <motion.div
-                  key={discardTop + ":" + (match.discard?.length ?? 0)}
-                  initial={{ y: -80, x: -20, rotate: -12, opacity: 0 }}
-                  animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 280, damping: 22 }}
-                  className="absolute inset-0"
-                >
-                  <PlayingCard id={discardTop} wildRank={wildRank} size="lg" />
-                </motion.div>
-              ) : (
-                <EmptyCardSlot size="lg" label="discard" />
-              )}
-            </AnimatePresence>
-          </div>
-          <button
-            disabled={!isMyTurn || match.hasDrawn || !discardTop || pending || roundComplete}
-            onClick={() => onAction({ type: "draw-discard" })}
-            className="rounded-full bg-amber-400/90 px-4 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
-          >
-            Take
-          </button>
-        </div>
+        {(() => {
+          const canDrawStock = isMyTurn && !match.hasDrawn && !pending && !roundComplete;
+          const canDrawDiscard = canDrawStock && Boolean(discardTop);
+          return (
+            <>
+              <motion.button
+                type="button"
+                disabled={!canDrawStock}
+                onClick={() => onAction({ type: "draw-stock" })}
+                title={canDrawStock ? "Draw from stock" : "Stock"}
+                whileHover={canDrawStock ? { y: -8, scale: 1.04 } : undefined}
+                whileTap={canDrawStock ? { scale: 0.97 } : undefined}
+                transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                className={`relative rounded-lg ${canDrawStock ? "cursor-pointer shadow-[0_0_18px_rgba(251,191,36,0.35)] ring-2 ring-amber-300/70" : "cursor-default"} disabled:opacity-80`}
+              >
+                <div className="absolute inset-0 translate-x-0.5 translate-y-0.5 rounded-lg bg-black/30 blur-[2px]" />
+                <CardBack size="lg" count={match.stockCount} />
+              </motion.button>
+              <motion.button
+                type="button"
+                disabled={!canDrawDiscard}
+                onClick={() => onAction({ type: "draw-discard" })}
+                title={canDrawDiscard ? "Take discard" : "Discard pile"}
+                whileHover={canDrawDiscard ? { y: -8, scale: 1.04 } : undefined}
+                whileTap={canDrawDiscard ? { scale: 0.97 } : undefined}
+                transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                className={`relative h-32 w-24 rounded-lg ${canDrawDiscard ? "cursor-pointer shadow-[0_0_18px_rgba(251,191,36,0.35)] ring-2 ring-amber-300/70" : "cursor-default"} disabled:opacity-80`}
+              >
+                <AnimatePresence mode="popLayout">
+                  {discardTop ? (
+                    <motion.div
+                      key={discardTop + ":" + (match.discard?.length ?? 0)}
+                      initial={{ y: -80, x: -20, rotate: -12, opacity: 0 }}
+                      animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                      className="absolute inset-0"
+                    >
+                      <PlayingCard id={discardTop} wildRank={wildRank} size="lg" />
+                    </motion.div>
+                  ) : (
+                    <EmptyCardSlot size="lg" label="discard" />
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            </>
+          );
+        })()}
       </div>
     </div>
   );
 }
 
-function Avatar({ name, userId, size = "md" }: { name: string; userId: string; size?: "sm" | "md" }) {
+function Avatar({ name, userId, imageUrl, size = "md" }: { name: string; userId: string; imageUrl?: string | null; size?: "sm" | "md" }) {
   const hue = avatarHue(userId);
   const dim = size === "sm" ? "h-7 w-7 text-[10px]" : "h-11 w-11 text-sm";
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt={name}
+        className={`${dim} rounded-full object-cover shadow-inner ring-2 ring-black/30`}
+      />
+    );
+  }
   return (
     <div
       className={`flex ${dim} items-center justify-center rounded-full font-bold text-white shadow-inner ring-2 ring-black/30`}
@@ -522,6 +542,7 @@ function Avatar({ name, userId, size = "md" }: { name: string; userId: string; s
 function SeatCard({
   name,
   userId,
+  imageUrl,
   isTurn,
   count,
   score,
@@ -529,6 +550,7 @@ function SeatCard({
 }: {
   name: string;
   userId: string;
+  imageUrl: string | null;
   isTurn: boolean;
   count: number;
   score: number;
