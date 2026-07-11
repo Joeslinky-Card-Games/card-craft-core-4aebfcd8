@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/tanstack-react-start";
 import { useApi, type GameAction, type MatchView } from "@/lib/api";
 import { PlayingCard, CardBack, EmptyCardSlot } from "@/components/game/PlayingCard";
@@ -18,6 +19,25 @@ export const Route = createFileRoute("/_authenticated/match/$matchId")({
 
 function shortId(id: string): string {
   return id.length <= 8 ? id : id.slice(0, 4) + "…" + id.slice(-4);
+}
+
+function displayName(match: MatchView, userId: string, self: string): string {
+  if (userId === self) return "You";
+  return match.usernames?.[userId] ?? shortId(userId);
+}
+
+function initialsOf(name: string): string {
+  const clean = name.replace(/[^\p{L}\p{N} ]/gu, "").trim();
+  if (!clean) return "?";
+  const parts = clean.split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function avatarHue(userId: string): number {
+  let h = 0;
+  for (let i = 0; i < userId.length; i++) h = (h * 31 + userId.charCodeAt(i)) >>> 0;
+  return h % 360;
 }
 
 function MatchPage() {
@@ -100,34 +120,42 @@ function LobbyView({
   const canStart = isCreator && match.players.length >= minPlayers;
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
-      <div className="mb-4 text-sm text-muted-foreground">
-        <Link to="/lobby" className="underline hover:text-foreground">← Lobby</Link>
+      <div className="mb-4 text-sm text-white/70">
+        <Link to="/lobby" className="underline hover:text-white">← Lobby</Link>
       </div>
-      <h1 className="text-3xl font-bold tracking-tight">Charlotte's Web</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Waiting for players. Match {shortId(match.matchId)}.</p>
+      <h1 className="font-serif text-4xl font-bold tracking-tight text-amber-100">Charlotte's Web</h1>
+      <p className="mt-1 text-sm text-white/60">Waiting for players. Match {shortId(match.matchId)}.</p>
 
-      <div className="mt-6 rounded-lg border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold uppercase text-muted-foreground">Players ({match.players.length}/{match.maxPlayers})</h2>
+      <div className="mt-6 rounded-xl border border-amber-900/40 bg-emerald-950/40 p-6 shadow-xl backdrop-blur">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-200/70">
+          Players ({match.players.length}/{match.maxPlayers})
+        </h2>
         <ul className="mt-3 space-y-2">
-          {match.players.map((p) => (
-            <li key={p} className="flex items-center justify-between rounded-md bg-muted px-3 py-2 text-sm">
-              <span className="font-mono">{p === userId ? "You" : shortId(p)}</span>
-              {p === match.createdBy && <span className="text-xs text-muted-foreground">host</span>}
-            </li>
-          ))}
+          {match.players.map((p) => {
+            const name = displayName(match, p, userId);
+            return (
+              <li key={p} className="flex items-center justify-between rounded-md bg-black/30 px-3 py-2 text-sm text-white">
+                <div className="flex items-center gap-2">
+                  <Avatar name={name} userId={p} size="sm" />
+                  <span>{name}</span>
+                </div>
+                {p === match.createdBy && <span className="text-xs text-amber-200/70">host</span>}
+              </li>
+            );
+          })}
         </ul>
         {isCreator ? (
           <button
             disabled={!canStart || starting}
             onClick={onStart}
-            className="mt-6 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+            className="mt-6 w-full rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-emerald-950 shadow hover:bg-amber-400 disabled:opacity-50"
           >
             {starting ? "Starting…" : canStart ? "Start match" : `Need ${minPlayers}+ players`}
           </button>
         ) : (
-          <p className="mt-6 text-sm text-muted-foreground">Waiting for the host to start.</p>
+          <p className="mt-6 text-sm text-white/60">Waiting for the host to start.</p>
         )}
-        {startError && <p className="mt-2 text-sm text-destructive">{startError}</p>}
+        {startError && <p className="mt-2 text-sm text-rose-300">{startError}</p>}
       </div>
     </main>
   );
@@ -209,87 +237,77 @@ function GameView({
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <Link to="/lobby" className="text-muted-foreground underline hover:text-foreground">← Lobby</Link>
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <span>Round <b className="text-foreground">{match.round}/13</b></span>
-          <span>Hand size <b className="text-foreground">{match.handSize}</b></span>
-          <span>Wild: <b className="text-amber-600">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b> + Jokers</span>
-        </div>
-      </div>
+    <main className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden">
+      {/* Felt table backdrop */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, #0f6a48 0%, #0a4a32 45%, #062a1c 100%)",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-30 mix-blend-overlay [background:repeating-linear-gradient(45deg,transparent_0_3px,rgba(255,255,255,0.04)_3px_6px)]" />
 
-      {/* Opponents */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {opponents.map((p) => (
-          <OpponentPanel
-            key={p}
-            playerId={p}
-            isTurn={p === currentUser}
-            count={match.handCounts?.[p] ?? 0}
-            score={match.scores?.[p] ?? 0}
-            wentOut={goneOut === p}
-          />
-        ))}
-      </div>
-
-      {/* Table center */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-6 rounded-lg border border-border bg-card/50 py-6">
-        <div className="flex flex-col items-center gap-1">
-          <CardBack size="lg" count={match.stockCount} />
-          <button
-            disabled={!isMyTurn || match.hasDrawn || pending || Boolean(goneOut) || roundComplete}
-            onClick={() => onAction({ type: "draw-stock" })}
-            className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground disabled:opacity-40"
-          >
-            Draw stock
-          </button>
+      <div className="mx-auto max-w-6xl px-4 py-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+          <Link to="/lobby" className="text-white/70 underline hover:text-white">← Lobby</Link>
+          <div className="flex items-center gap-4 rounded-full border border-amber-300/30 bg-black/25 px-4 py-1.5 text-white/80 shadow backdrop-blur">
+            <span>Round <b className="text-amber-200">{match.round}/13</b></span>
+            <span className="text-white/30">·</span>
+            <span>Hand <b className="text-amber-200">{match.handSize}</b></span>
+            <span className="text-white/30">·</span>
+            <span>Wild <b className="text-amber-300">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b> + ★</span>
+          </div>
         </div>
-        <div className="flex flex-col items-center gap-1">
-          {discardTop ? <PlayingCard id={discardTop} wildRank={wildRank} size="lg" /> : <EmptyCardSlot size="lg" label="empty" />}
-          <button
-            disabled={!isMyTurn || match.hasDrawn || !discardTop || pending || Boolean(goneOut) || roundComplete}
-            onClick={() => onAction({ type: "draw-discard" })}
-            className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground disabled:opacity-40"
-          >
-            Take discard
-          </button>
-        </div>
-      </div>
 
-      <div className="mt-3 text-center text-sm">
+        {/* Table area with seats */}
+        <TableArea
+          opponents={opponents}
+          match={match}
+          userId={userId}
+          currentUser={currentUser}
+          isMyTurn={isMyTurn}
+          pending={pending}
+          goneOut={goneOut}
+          roundComplete={roundComplete}
+          discardTop={discardTop}
+          wildRank={wildRank}
+          onAction={onAction}
+        />
+
+        <div className="mt-4 text-center text-sm">
         {matchComplete ? (
-          <span className="text-emerald-600">
-            Match complete. Winner: <b>{match.winner === userId ? "You" : shortId(match.winner ?? "")}</b>
+          <span className="text-emerald-300">
+            Match complete. Winner: <b className="text-amber-200">{displayName(match, match.winner ?? "", userId)}</b>
           </span>
         ) : roundComplete ? (
-          <span className="text-muted-foreground">Round {match.round} complete.</span>
+          <span className="text-white/70">Round {match.round} complete.</span>
         ) : goneOut ? (
-          <span className="text-amber-600">
-            {goneOut === userId ? "You went out." : `${shortId(goneOut)} went out.`}
+          <span className="text-amber-300">
+            {goneOut === userId ? "You went out." : `${displayName(match, goneOut, userId)} went out.`}
             {" "}Final turns remaining: {match.remainingFinalTurns}.
           </span>
         ) : isMyTurn ? (
-          <span className="text-primary">Your turn — {match.hasDrawn ? "discard or lay down" : "draw a card"}.</span>
+          <span className="text-amber-200">Your turn — {match.hasDrawn ? "discard or lay down" : "draw a card"}.</span>
         ) : (
-          <span className="text-muted-foreground">Waiting on {shortId(currentUser)}…</span>
+          <span className="text-white/70">Waiting on {displayName(match, currentUser, userId)}…</span>
         )}
-        {actionError && <div className="mt-1 text-xs text-destructive">{actionError}</div>}
-      </div>
+          {actionError && <div className="mt-1 text-xs text-rose-300">{actionError}</div>}
+        </div>
 
       {/* My hand */}
       <section className="mt-6">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">
-            Your hand — {sorted.length} card{sorted.length === 1 ? "" : "s"} · unmelded score {" "}
-            <b className="text-foreground">{sorted.filter((c) => !usedInMelds.has(c)).reduce((s, c) => s + cardPoints(c), 0)}</b>
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-200/70">
+            Your hand — {sorted.length} card{sorted.length === 1 ? "" : "s"} · unmelded {" "}
+            <b className="text-amber-100">{sorted.filter((c) => !usedInMelds.has(c)).reduce((s, c) => s + cardPoints(c), 0)}</b>
           </h2>
           <div className="flex gap-2">
             {mode === "idle" ? (
               <button
                 disabled={!isMyTurn || !match.hasDrawn || Boolean(goneOut) || roundComplete}
                 onClick={() => setMode("meld")}
-                className="rounded-md border border-primary px-3 py-1 text-xs text-primary disabled:opacity-40"
+                className="rounded-md border border-amber-300/60 px-3 py-1 text-xs font-medium text-amber-200 hover:bg-amber-300/10 disabled:opacity-40"
               >
                 Lay down…
               </button>
@@ -298,18 +316,18 @@ function GameView({
                 <button
                   disabled={currentMeld.length < 3}
                   onClick={commitCurrentMeld}
-                  className="rounded-md border border-primary px-3 py-1 text-xs text-primary disabled:opacity-40"
+                  className="rounded-md border border-amber-300/60 px-3 py-1 text-xs text-amber-200 hover:bg-amber-300/10 disabled:opacity-40"
                 >
                   Add meld ({currentMeld.length})
                 </button>
                 <button
                   disabled={stagedMelds.length === 0 && currentMeld.length === 0}
                   onClick={handleLayDown}
-                  className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground disabled:opacity-40"
+                  className="rounded-md bg-amber-400 px-3 py-1 text-xs font-semibold text-emerald-950 disabled:opacity-40"
                 >
                   Lay down
                 </button>
-                <button onClick={resetMeld} className="rounded-md border border-border px-3 py-1 text-xs text-muted-foreground">
+                <button onClick={resetMeld} className="rounded-md border border-white/20 px-3 py-1 text-xs text-white/70 hover:bg-white/5">
                   Cancel
                 </button>
               </>
@@ -318,39 +336,50 @@ function GameView({
         </div>
 
         {mode === "meld" && (
-          <div className="mb-3 rounded-md border border-dashed border-border bg-muted/40 p-3">
-            <p className="text-xs text-muted-foreground">
+          <div className="mb-3 rounded-md border border-dashed border-amber-300/40 bg-black/30 p-3 backdrop-blur">
+            <p className="text-xs text-white/70">
               Tap cards to add them to the current meld, then "Add meld". Repeat until only one card remains (the discard). Naturals must strictly outnumber wilds.
             </p>
             {stagedMelds.map((m, i) => (
               <div key={i} className="mt-2 flex flex-wrap items-center gap-1">
-                <span className="text-xs text-muted-foreground">#{i + 1}</span>
+                <span className="text-xs text-amber-200/70">#{i + 1}</span>
                 {m.map((c) => <PlayingCard key={c} id={c} wildRank={wildRank} size="sm" />)}
               </div>
             ))}
             {currentMeld.length > 0 && (
               <div className="mt-2 flex flex-wrap items-center gap-1">
-                <span className="text-xs text-primary">current</span>
+                <span className="text-xs text-amber-300">current</span>
                 {currentMeld.map((c) => <PlayingCard key={c} id={c} wildRank={wildRank} size="sm" />)}
               </div>
             )}
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          {sorted.map((c) => (
-            <PlayingCard
-              key={c}
-              id={c}
-              wildRank={wildRank}
-              selected={mode === "meld" && (currentMeld.includes(c) || stagedMelds.some((m) => m.includes(c)))}
-              faded={mode === "meld" && usedInMelds.has(c) && !currentMeld.includes(c)}
-              onClick={() => handleCardClick(c)}
-            />
-          ))}
-          {sorted.length === 0 && <p className="text-sm text-muted-foreground">No cards in hand.</p>}
+        <div className="flex min-h-[8rem] flex-wrap justify-center gap-2 rounded-xl border border-white/5 bg-black/20 p-3 backdrop-blur">
+          <AnimatePresence initial={false}>
+            {sorted.map((c, idx) => (
+              <motion.div
+                key={c}
+                layout
+                initial={{ y: -140, opacity: 0, rotate: -8 }}
+                animate={{ y: 0, opacity: 1, rotate: 0 }}
+                exit={{ y: 120, opacity: 0, rotate: 6, scale: 0.85 }}
+                transition={{ type: "spring", stiffness: 260, damping: 22, delay: Math.min(idx * 0.008, 0.15) }}
+              >
+                <PlayingCard
+                  id={c}
+                  wildRank={wildRank}
+                  selected={mode === "meld" && (currentMeld.includes(c) || stagedMelds.some((m) => m.includes(c)))}
+                  faded={mode === "meld" && usedInMelds.has(c) && !currentMeld.includes(c)}
+                  onClick={() => handleCardClick(c)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {sorted.length === 0 && <p className="self-center text-sm text-white/60">No cards in hand.</p>}
         </div>
       </section>
+      </div>
 
       {/* Round complete modal */}
       {(roundComplete || matchComplete) && (
@@ -365,29 +394,202 @@ function GameView({
   );
 }
 
-function OpponentPanel({
-  playerId,
+function TableArea({
+  opponents,
+  match,
+  userId,
+  currentUser,
+  isMyTurn,
+  pending,
+  goneOut,
+  roundComplete,
+  discardTop,
+  wildRank,
+  onAction,
+}: {
+  opponents: string[];
+  match: MatchView;
+  userId: string;
+  currentUser: string;
+  isMyTurn: boolean;
+  pending: boolean;
+  goneOut: string | null | undefined;
+  roundComplete: boolean;
+  discardTop: string | null;
+  wildRank: string | null;
+  onAction: (a: GameAction) => void;
+}) {
+  // Position opponents evenly around the upper half of an ellipse.
+  const n = opponents.length;
+  const seats = opponents.map((p, i) => {
+    // angles from ~200° to ~-20° (i.e. bottom-left, top, bottom-right) staying on upper arc
+    const t = n === 1 ? 0.5 : i / (n - 1);
+    const angleDeg = 200 - t * 220; // 200..-20
+    const rad = (angleDeg * Math.PI) / 180;
+    // Container: 0.5 + rx*cos, 0.5 - ry*sin (y inverted; sin>0 -> top)
+    const rx = 0.42;
+    const ry = 0.38;
+    const x = 0.5 + rx * Math.cos(rad);
+    const y = 0.5 - ry * Math.sin(rad);
+    return { p, x, y };
+  });
+
+  return (
+    <div className="relative mx-auto aspect-[16/9] w-full max-w-4xl">
+      {/* Oval table */}
+      <div
+        className="absolute inset-4 rounded-[50%] border-[10px] border-amber-950/80 shadow-[inset_0_0_60px_rgba(0,0,0,0.55),0_20px_50px_rgba(0,0,0,0.5)]"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, #147a56 0%, #0c5c40 55%, #084b34 100%)",
+        }}
+      />
+      {/* Table stitching */}
+      <div className="pointer-events-none absolute inset-8 rounded-[50%] border border-dashed border-amber-200/15" />
+
+      {/* Seats */}
+      {seats.map(({ p, x, y }) => {
+        const name = displayName(match, p, userId);
+        return (
+          <div
+            key={p}
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
+          >
+            <SeatCard
+              name={name}
+              userId={p}
+              isTurn={p === currentUser}
+              count={match.handCounts?.[p] ?? 0}
+              score={match.scores?.[p] ?? 0}
+              wentOut={goneOut === p}
+            />
+          </div>
+        );
+      })}
+
+      {/* Center piles */}
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-6">
+        <div className="flex flex-col items-center gap-2">
+          <div className="relative">
+            {/* Stack shadow */}
+            <div className="absolute inset-0 translate-x-0.5 translate-y-0.5 rounded-lg bg-black/30 blur-[2px]" />
+            <CardBack size="lg" count={match.stockCount} />
+          </div>
+          <button
+            disabled={!isMyTurn || match.hasDrawn || pending || Boolean(goneOut) || roundComplete}
+            onClick={() => onAction({ type: "draw-stock" })}
+            className="rounded-full bg-amber-400 px-4 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
+          >
+            Draw
+          </button>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="relative h-32 w-24">
+            <AnimatePresence mode="popLayout">
+              {discardTop ? (
+                <motion.div
+                  key={discardTop + ":" + (match.discard?.length ?? 0)}
+                  initial={{ y: -80, x: -20, rotate: -12, opacity: 0 }}
+                  animate={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                  className="absolute inset-0"
+                >
+                  <PlayingCard id={discardTop} wildRank={wildRank} size="lg" />
+                </motion.div>
+              ) : (
+                <EmptyCardSlot size="lg" label="discard" />
+              )}
+            </AnimatePresence>
+          </div>
+          <button
+            disabled={!isMyTurn || match.hasDrawn || !discardTop || pending || Boolean(goneOut) || roundComplete}
+            onClick={() => onAction({ type: "draw-discard" })}
+            className="rounded-full bg-amber-400/90 px-4 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
+          >
+            Take
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Avatar({ name, userId, size = "md" }: { name: string; userId: string; size?: "sm" | "md" }) {
+  const hue = avatarHue(userId);
+  const dim = size === "sm" ? "h-7 w-7 text-[10px]" : "h-11 w-11 text-sm";
+  return (
+    <div
+      className={`flex ${dim} items-center justify-center rounded-full font-bold text-white shadow-inner ring-2 ring-black/30`}
+      style={{ background: `linear-gradient(135deg, hsl(${hue} 65% 45%), hsl(${(hue + 40) % 360} 65% 30%))` }}
+    >
+      {initialsOf(name)}
+    </div>
+  );
+}
+
+function SeatCard({
+  name,
+  userId,
   isTurn,
   count,
   score,
   wentOut,
 }: {
-  playerId: string;
+  name: string;
+  userId: string;
   isTurn: boolean;
   count: number;
   score: number;
   wentOut: boolean;
 }) {
   return (
-    <div className={`rounded-lg border p-3 ${isTurn ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-mono">{shortId(playerId)}</span>
-        <span className="text-xs text-muted-foreground">total {score}</span>
+    <div
+      className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 backdrop-blur transition-all ${
+        isTurn
+          ? "bg-amber-400/15 shadow-[0_0_24px_rgba(251,191,36,0.5)] ring-2 ring-amber-300"
+          : "bg-black/40 ring-1 ring-white/10"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <Avatar name={name} userId={userId} />
+        <div className="text-left leading-tight">
+          <div className="max-w-[8rem] truncate text-sm font-semibold text-white">{name}</div>
+          <div className="text-[10px] uppercase tracking-wider text-white/60">
+            total <span className="text-amber-200">{score}</span>
+          </div>
+        </div>
       </div>
-      <div className="mt-2 flex items-center gap-1">
-        {Array.from({ length: Math.min(count, 8) }).map((_, i) => <CardBack key={i} size="sm" />)}
-        {count > 8 && <span className="ml-1 text-xs text-muted-foreground">+{count - 8}</span>}
-        {count === 0 && wentOut && <span className="text-xs text-emerald-600">went out</span>}
+      {/* Fanned card backs */}
+      <div className="relative mt-1 flex h-8 items-center justify-center">
+        {Array.from({ length: Math.min(count, 6) }).map((_, i) => {
+          const total = Math.min(count, 6);
+          const offset = (i - (total - 1) / 2) * 6;
+          const rot = (i - (total - 1) / 2) * 6;
+          return (
+            <div
+              key={i}
+              className="absolute h-9 w-6 rounded-sm border border-emerald-950/60 shadow-sm"
+              style={{
+                background:
+                  "repeating-linear-gradient(45deg, #7f1d1d 0 3px, #991b1b 3px 6px)",
+                transform: `translateX(${offset}px) rotate(${rot}deg)`,
+                zIndex: i,
+              }}
+            />
+          );
+        })}
+        {count > 6 && (
+          <span className="absolute -bottom-3 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] text-white/80">
+            {count}
+          </span>
+        )}
+        {count === 0 && wentOut && (
+          <span className="rounded-full bg-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-200">
+            went out
+          </span>
+        )}
       </div>
     </div>
   );
@@ -410,19 +612,24 @@ function RoundSummary({
   const complete = match.status === "complete";
   const sorted = [...match.players].sort((a, b) => (scores[a] ?? 0) - (scores[b] ?? 0));
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-xl">
-        <h2 className="text-lg font-semibold">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 250, damping: 20 }}
+        className="w-full max-w-md rounded-2xl border border-amber-300/30 bg-gradient-to-br from-emerald-950 to-emerald-900 p-6 text-white shadow-2xl"
+      >
+        <h2 className="font-serif text-2xl font-bold text-amber-100">
           {complete ? "Match complete" : `Round ${match.round} complete`}
         </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-white/60">
           {complete
-            ? `Winner: ${match.winner === userId ? "You" : shortId(match.winner ?? "")}`
+            ? `Winner: ${displayName(match, match.winner ?? "", userId)}`
             : `Lowest total after 13 rounds wins.`}
         </p>
         <table className="mt-4 w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase text-muted-foreground">
+            <tr className="text-left text-xs uppercase tracking-wider text-amber-200/70">
               <th className="py-1">Player</th>
               <th>+ Round</th>
               <th>Total</th>
@@ -430,10 +637,10 @@ function RoundSummary({
           </thead>
           <tbody>
             {sorted.map((p) => (
-              <tr key={p} className="border-t border-border">
-                <td className="py-1 font-mono">{p === userId ? "You" : shortId(p)}</td>
-                <td>{deltas[p] ?? 0}</td>
-                <td className="font-semibold">{scores[p] ?? 0}</td>
+              <tr key={p} className="border-t border-white/10">
+                <td className="py-1.5">{displayName(match, p, userId)}</td>
+                <td className="text-white/80">{deltas[p] ?? 0}</td>
+                <td className="font-semibold text-amber-200">{scores[p] ?? 0}</td>
               </tr>
             ))}
           </tbody>
@@ -442,7 +649,7 @@ function RoundSummary({
           {complete ? (
             <button
               onClick={() => navigate({ to: "/lobby" })}
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+              className="rounded-md bg-amber-400 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-amber-300"
             >
               Back to lobby
             </button>
@@ -450,13 +657,13 @@ function RoundSummary({
             <button
               disabled={pending}
               onClick={onNext}
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-40"
+              className="rounded-md bg-amber-400 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-amber-300 disabled:opacity-40"
             >
               {pending ? "Starting…" : "Start next round"}
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
