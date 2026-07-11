@@ -118,6 +118,10 @@ function MatchPage() {
     mutationFn: () => api<MatchView>(`/matches/${matchId}/next-round`, { method: "POST" }),
     onSuccess: (data) => { qc.setQueryData(["match", matchId], data); },
   });
+  const playAgainMut = useMutation({
+    mutationFn: () => api<MatchView>(`/matches/${matchId}/play-again`, { method: "POST" }),
+    onSuccess: (data) => { qc.setQueryData(["match", matchId], data); },
+  });
   const chatMut = useMutation({
     mutationFn: (text: string) =>
       api<MatchView>(`/matches/${matchId}/chat`, { method: "POST", body: { text } }),
