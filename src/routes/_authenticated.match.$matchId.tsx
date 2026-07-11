@@ -579,6 +579,8 @@ function GameView({
           userId={userId}
           onNext={onNextRound}
           pending={pending}
+          onPlayAgain={onPlayAgain}
+          playAgainPending={playAgainPending}
         />
       )}
 
