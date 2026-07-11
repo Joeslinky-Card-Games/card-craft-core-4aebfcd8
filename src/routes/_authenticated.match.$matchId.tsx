@@ -1021,6 +1021,31 @@ function ChatPanel({
   );
 }
 
+function SortableCard({
+  id,
+  wildRank,
+  onClick,
+}: {
+  id: string;
+  wildRank: string | null;
+  onClick: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.85 : 1,
+    cursor: isDragging ? "grabbing" : "grab",
+    touchAction: "none",
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <PlayingCard id={id} wildRank={wildRank} onClick={onClick} />
+    </div>
+  );
+}
+
 function GoOutOptionsPicker({
   options,
   wildRank,
