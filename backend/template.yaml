@@ -89,7 +89,12 @@ Resources:
       CodeUri: src/
       Handler: handlers/games/list.handler
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /games } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /games
 
   GetGameFn:
     Type: AWS::Serverless::Function
@@ -97,7 +102,12 @@ Resources:
       CodeUri: src/
       Handler: handlers/games/get.handler
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /games/{gameId} } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /games/{gameId}
 
   # ---------- Matches ----------
   ListMatchesFn:
@@ -106,9 +116,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/matches/list.handler
       Policies:
-        - DynamoDBReadPolicy: { TableName: !Ref MatchesTable }
+        - DynamoDBReadPolicy:
+            TableName: !Ref MatchesTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /matches } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /matches
 
   CreateMatchFn:
     Type: AWS::Serverless::Function
@@ -116,9 +132,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/matches/create.handler
       Policies:
-        - DynamoDBCrudPolicy: { TableName: !Ref MatchesTable }
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: POST, Path: /matches } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches
 
   GetMatchFn:
     Type: AWS::Serverless::Function
@@ -126,9 +148,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/matches/get.handler
       Policies:
-        - DynamoDBReadPolicy: { TableName: !Ref MatchesTable }
+        - DynamoDBReadPolicy:
+            TableName: !Ref MatchesTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /matches/{matchId} } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /matches/{matchId}
 
   JoinMatchFn:
     Type: AWS::Serverless::Function
@@ -136,9 +164,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/matches/join.handler
       Policies:
-        - DynamoDBCrudPolicy: { TableName: !Ref MatchesTable }
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: POST, Path: /matches/{matchId}/join } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches/{matchId}/join
 
   MatchActionFn:
     Type: AWS::Serverless::Function
@@ -146,9 +180,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/matches/action.handler
       Policies:
-        - DynamoDBCrudPolicy: { TableName: !Ref MatchesTable }
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: POST, Path: /matches/{matchId}/action } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches/{matchId}/action
 
   # ---------- Profile ----------
   GetProfileFn:
@@ -157,9 +197,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/profile/get.handler
       Policies:
-        - DynamoDBCrudPolicy: { TableName: !Ref UsersTable }
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /profile } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /profile
 
   UpdateProfileFn:
     Type: AWS::Serverless::Function
@@ -167,9 +213,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/profile/update.handler
       Policies:
-        - DynamoDBCrudPolicy: { TableName: !Ref UsersTable }
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: PUT, Path: /profile } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: PUT
+            Path: /profile
 
   # ---------- Stats ----------
   GetMyStatsFn:
@@ -178,9 +230,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/stats/me.handler
       Policies:
-        - DynamoDBReadPolicy: { TableName: !Ref StatsTable }
+        - DynamoDBReadPolicy:
+            TableName: !Ref StatsTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /stats/me } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /stats/me
 
   LeaderboardFn:
     Type: AWS::Serverless::Function
@@ -188,9 +246,15 @@ Resources:
       CodeUri: src/
       Handler: handlers/stats/leaderboard.handler
       Policies:
-        - DynamoDBReadPolicy: { TableName: !Ref StatsTable }
+        - DynamoDBReadPolicy:
+            TableName: !Ref StatsTable
       Events:
-        Api: { Type: HttpApi, Properties: { ApiId: !Ref HttpApi, Method: GET, Path: /stats/leaderboard } }
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /stats/leaderboard
 
 Outputs:
   ApiUrl:
