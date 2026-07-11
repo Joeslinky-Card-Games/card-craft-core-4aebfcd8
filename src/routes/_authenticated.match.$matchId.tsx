@@ -7,7 +7,7 @@ import { useApi, type GameAction, type MatchView } from "@/lib/api";
 import { useClerkIdentity } from "@/lib/identity";
 import { PlayingCard, CardBack, EmptyCardSlot } from "@/components/game/PlayingCard";
 import { sortHand, cardPoints } from "@/lib/game/cards";
-import { autoArrange } from "@/lib/game/melds";
+import { autoArrange, orderMeldForDisplay } from "@/lib/game/melds";
 import { RulesDialog } from "@/components/game/RulesDialog";
 
 export const Route = createFileRoute("/_authenticated/match/$matchId")({
