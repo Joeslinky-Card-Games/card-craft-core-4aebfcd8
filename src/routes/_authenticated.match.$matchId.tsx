@@ -319,6 +319,21 @@ function GameView({
   const goneOut = match.goneOutBy;
   const roundComplete = match.status === "round-complete";
   const matchComplete = match.status === "complete";
+  const viewerDone = Boolean((goneOut && goneOut === userId) || match.laidMelds?.[userId]);
+
+  // Announce the first "went out" event with a dismissible popup so it's not
+  // easy to miss when opponents (or you) finish the round early.
+  const [goneOutAnnouncement, setGoneOutAnnouncement] = useState<string | null>(null);
+  const lastAnnouncedGoneOut = useRef<string | null>(null);
+  useEffect(() => {
+    if (goneOut && lastAnnouncedGoneOut.current !== goneOut) {
+      lastAnnouncedGoneOut.current = goneOut;
+      setGoneOutAnnouncement(goneOut);
+    }
+    if (!goneOut) {
+      lastAnnouncedGoneOut.current = null;
+    }
+  }, [goneOut]);
 
   const discardTop = match.discard && match.discard.length > 0 ? match.discard[match.discard.length - 1] : null;
 
@@ -464,6 +479,7 @@ function GameView({
           goneOut={goneOut}
           roundComplete={roundComplete}
           matchComplete={matchComplete}
+          viewerDone={viewerDone}
           discardTop={discardTop}
           wildRank={wildRank}
           onAction={onAction}
