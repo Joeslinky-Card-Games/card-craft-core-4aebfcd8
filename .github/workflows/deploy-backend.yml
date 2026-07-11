@@ -42,12 +42,14 @@ jobs:
 
       - name: SAM deploy
         run: |
+          PARAMS="ClerkIssuer=${{ secrets.CLERK_ISSUER }}"
+          if [ -n "${{ secrets.CLERK_AUDIENCE }}" ]; then
+            PARAMS="$PARAMS ClerkAudience=${{ secrets.CLERK_AUDIENCE }}"
+          fi
           sam deploy \
             --stack-name card-game-platform \
             --resolve-s3 \
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
-            --parameter-overrides \
-              ClerkIssuer='${{ secrets.CLERK_ISSUER }}' \
-              ClerkAudience='${{ secrets.CLERK_AUDIENCE }}'
+            --parameter-overrides $PARAMS
