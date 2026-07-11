@@ -524,15 +524,93 @@ function GameView({
       className="relative min-h-[calc(100vh-4rem)] min-h-[calc(100dvh-4rem)] w-full overflow-x-hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      {/* Felt table backdrop */}
+      {/* Room: back wall */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-30"
+        style={{
+          background:
+            "linear-gradient(180deg, #1a0f0a 0%, #2a1810 45%, #1e1108 62%, #1e1108 100%)",
+        }}
+      />
+      {/* Room: wooden floor (lower portion) with perspective */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-30 h-[38%]"
+        style={{
+          background:
+            "linear-gradient(180deg, #2a1a10 0%, #4a2d1a 25%, #3a2312 70%, #1f120a 100%)",
+        }}
+      />
+      {/* Floor plank streaks */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-30 h-[38%] opacity-40 mix-blend-overlay"
+        style={{
+          background:
+            "repeating-linear-gradient(90deg, transparent 0 60px, rgba(0,0,0,0.35) 60px 62px, transparent 62px 130px, rgba(255,220,180,0.05) 130px 132px)",
+        }}
+      />
+      {/* Wall/floor seam shadow */}
+      <div
+        className="pointer-events-none absolute inset-x-0 -z-30 h-16"
+        style={{
+          bottom: "38%",
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 100%)",
+        }}
+      />
+      {/* Overhead light cone spilling onto wall */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-20"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 55% at 50% 42%, rgba(255,214,140,0.18) 0%, rgba(255,190,110,0.08) 35%, rgba(0,0,0,0) 70%)",
+        }}
+      />
+      {/* Felt table oval */}
+      <div
+        className="pointer-events-none absolute -z-20"
+        style={{
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "min(1180px, 96vw)",
+          height: "min(760px, 78vh)",
+          borderRadius: "50%",
+          background:
+            "radial-gradient(ellipse at 50% 30%, #1a8a5c 0%, #0f6a48 35%, #0a4a32 70%, #063220 100%)",
+          boxShadow:
+            "0 40px 80px -20px rgba(0,0,0,0.85), 0 20px 40px -10px rgba(0,0,0,0.7), inset 0 0 60px rgba(0,0,0,0.45), inset 0 0 0 8px #3a2110, inset 0 0 0 10px rgba(120,70,30,0.6)",
+        }}
+      />
+      {/* Felt weave texture */}
+      <div
+        className="pointer-events-none absolute -z-20 opacity-25 mix-blend-overlay"
+        style={{
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "min(1180px, 96vw)",
+          height: "min(760px, 78vh)",
+          borderRadius: "50%",
+          background:
+            "repeating-linear-gradient(45deg,transparent 0 3px,rgba(255,255,255,0.05) 3px 6px)",
+        }}
+      />
+      {/* Warm spotlight hitting the felt from above */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse at center, #0f6a48 0%, #0a4a32 45%, #062a1c 100%)",
+            "radial-gradient(ellipse 42% 38% at 50% 44%, rgba(255,230,170,0.32) 0%, rgba(255,210,140,0.14) 30%, rgba(255,190,110,0.04) 55%, rgba(0,0,0,0) 75%)",
         }}
       />
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-30 mix-blend-overlay [background:repeating-linear-gradient(45deg,transparent_0_3px,rgba(255,255,255,0.04)_3px_6px)]" />
+      {/* Vignette to sink the room edges */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)",
+        }}
+      />
 
       <div className="mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
