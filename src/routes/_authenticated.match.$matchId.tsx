@@ -1014,10 +1014,6 @@ function LaidMeldsDialog({
   );
 }
 
-function RoundSummary({
-  // placeholder
-}
-
 function WentOutAnnouncement({
   name,
   isSelf,
