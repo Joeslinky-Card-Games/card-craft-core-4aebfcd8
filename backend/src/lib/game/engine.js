@@ -137,10 +137,10 @@ function doLayDown(state, userId, melds, discardCard) {
   if (!res.ok) throw new Error(`Invalid lay-down: ${res.reason}`);
   state.hands[userId] = [];
   state.discard.push(discardCard);
-  state.goneOutBy = userId;
-  state.remainingFinalTurns = state._order.length - 1;
   state.laidMelds[userId] = melds;
   advanceTurn(state);
+  state.goneOutBy = userId;
+  state.remainingFinalTurns = state._order.length - 1;
   state.version++;
   maybeFinalize(state);
   return state;
