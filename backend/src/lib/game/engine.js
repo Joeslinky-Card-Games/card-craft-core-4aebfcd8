@@ -132,16 +132,23 @@ function doDiscard(state, userId, card) {
 
 function doLayDown(state, userId, melds, discardCard) {
   if (!state.hasDrawn) throw new Error("Must draw before laying down");
-  if (state.goneOutBy) throw new Error("Someone already went out this round");
   const hand = state.hands[userId];
   const res = validateGoingOut(melds, hand, discardCard, state.wildRank);
   if (!res.ok) throw new Error(`Invalid lay-down: ${res.reason}`);
+  if (state.laidMelds && state.laidMelds[userId]) {
+    throw new Error("You already went out this round");
+  }
   state.hands[userId] = [];
   state.discard.push(discardCard);
   state.laidMelds[userId] = melds;
   advanceTurn(state);
-  state.goneOutBy = userId;
-  state.remainingFinalTurns = state._order.length - 1;
+  // First player out sets the final-turn countdown for everyone else.
+  // Subsequent players are simply using one of their remaining final turns
+  // to also go out — they don't reset the counter, they just also score 0.
+  if (!state.goneOutBy) {
+    state.goneOutBy = userId;
+    state.remainingFinalTurns = state._order.length - 1;
+  }
   state.version++;
   maybeFinalize(state);
   return state;
@@ -154,7 +161,7 @@ function maybeFinalize(state) {
 function finalizeRound(state) {
   const deltas = {};
   for (const p of state.players) {
-    if (p === state.goneOutBy) {
+    if (p === state.goneOutBy || state.laidMelds?.[p]) {
       deltas[p] = 0;
     } else {
       // Score using the best possible meld arrangement so players who did not
