@@ -307,10 +307,6 @@ function GameView({
 
   const goOutOptions = arrangement.goOutOptions ?? [];
   const [pickingGoOutDiscard, setPickingGoOutDiscard] = useState(false);
-  const goOutDiscardChoices = useMemo(
-    () => new Set(goOutOptions.map((o) => o.discard)),
-    [goOutOptions],
-  );
 
   // Reset the picker if the state that gates it changes.
   useEffect(() => {
@@ -318,15 +314,14 @@ function GameView({
   }, [canLayDown, goOutOptions.length]);
 
   const handleCardClick = (card: string) => {
-    if (pickingGoOutDiscard) {
-      const chosen = goOutOptions.find((o) => o.discard === card);
-      if (!chosen) return;
-      setPickingGoOutDiscard(false);
-      onAction({ type: "lay-down", melds: chosen.melds, discard: chosen.discard });
-      return;
-    }
+    if (pickingGoOutDiscard) return; // picker modal handles selection
     if (!canDiscard) return;
     onAction({ type: "discard", card });
+  };
+
+  const handlePickOption = (opt: { discard: string; melds: string[][] }) => {
+    setPickingGoOutDiscard(false);
+    onAction({ type: "lay-down", melds: opt.melds, discard: opt.discard });
   };
 
   const handleLayDown = () => {
@@ -408,11 +403,9 @@ function GameView({
           <span className="text-amber-200">Your turn — {
             !match.hasDrawn
               ? "draw a card"
-              : pickingGoOutDiscard
-                ? "tap one of the highlighted cards to discard and go out"
-                : canLayDown
-                  ? "tap a card to discard, or lay down to go out"
-                  : "tap a card to discard"
+              : canLayDown
+                ? "tap a card to discard, or lay down to go out"
+                : "tap a card to discard"
           }.</span>
         ) : (
           <span className="text-white/70">Waiting on {displayName(match, currentUser, userId)}…</span>
@@ -439,15 +432,7 @@ function GameView({
               disabled={pending}
               className="rounded-md bg-amber-400 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-950 shadow-[0_0_16px_rgba(251,191,36,0.6)] hover:bg-amber-300 disabled:opacity-40"
             >
-              {pickingGoOutDiscard ? "Choose card to discard…" : "Lay down · go out"}
-            </button>
-          )}
-          {pickingGoOutDiscard && (
-            <button
-              onClick={() => setPickingGoOutDiscard(false)}
-              className="rounded-md border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
-            >
-              Cancel
+              Lay down · go out
             </button>
           )}
         </div>
@@ -476,11 +461,6 @@ function GameView({
                         layoutId={`card-${c}`}
                         transition={{ type: "spring", stiffness: 260, damping: 24 }}
                         style={{ marginLeft: i === 0 ? 0 : -34, zIndex: i }}
-                        className={
-                          pickingGoOutDiscard && goOutDiscardChoices.has(c)
-                            ? "rounded-lg ring-2 ring-amber-300 ring-offset-2 ring-offset-emerald-900"
-                            : undefined
-                        }
                       >
                         <PlayingCard
                           id={c}
@@ -500,11 +480,6 @@ function GameView({
                     animate={{ y: 0, opacity: 1, rotate: 0 }}
                     exit={{ y: 120, opacity: 0, rotate: 6, scale: 0.85 }}
                     transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                    className={
-                      pickingGoOutDiscard && goOutDiscardChoices.has(c)
-                        ? "rounded-lg ring-2 ring-amber-300 ring-offset-2 ring-offset-black/40"
-                        : undefined
-                    }
                   >
                     <PlayingCard
                       id={c}
@@ -547,6 +522,15 @@ function GameView({
         onOpenChange={setRulesOpen}
         onDontShowAgain={dontShowAgain}
       />
+      {pickingGoOutDiscard && (
+        <GoOutOptionsPicker
+          options={goOutOptions}
+          wildRank={wildRank}
+          pending={pending}
+          onCancel={() => setPickingGoOutDiscard(false)}
+          onPick={handlePickOption}
+        />
+      )}
       <ChatPanel
         match={match}
         userId={userId}
@@ -978,6 +962,116 @@ function ChatPanel({
           </span>
         )}
       </button>
+    </div>
+  );
+}
+
+function GoOutOptionsPicker({
+  options,
+  wildRank,
+  pending,
+  onCancel,
+  onPick,
+}: {
+  options: { discard: string; melds: string[][] }[];
+  wildRank: string | null;
+  pending: boolean;
+  onCancel: () => void;
+  onPick: (opt: { discard: string; melds: string[][] }) => void;
+}) {
+  // Deduplicate by discard card in case the solver returned equivalents.
+  const seen = new Set<string>();
+  const unique = options.filter((o) => {
+    if (seen.has(o.discard)) return false;
+    seen.add(o.discard);
+    return true;
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0, y: 12 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        className="w-full max-w-3xl rounded-2xl border border-amber-300/30 bg-gradient-to-br from-emerald-950 to-emerald-900 p-6 text-white shadow-2xl"
+      >
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-amber-100">Pick how to go out</h2>
+            <p className="mt-1 text-sm text-white/70">
+              You have multiple valid lay-downs. Each option shows the melds you'll keep and the card that will be discarded.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="shrink-0 rounded-full px-2 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
+            aria-label="Cancel"
+          >
+            ×
+          </button>
+        </div>
+
+        <ul className="max-h-[65vh] space-y-3 overflow-y-auto pr-1">
+          {unique.map((opt, idx) => (
+            <li key={opt.discard}>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => onPick(opt)}
+                className="group flex w-full flex-col gap-3 rounded-xl border border-white/10 bg-black/30 p-3 text-left transition hover:border-amber-300/60 hover:bg-black/50 disabled:opacity-50 sm:flex-row sm:items-center"
+              >
+                <span className="shrink-0 rounded-md bg-white/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/60 group-hover:text-white/80">
+                  Option {idx + 1}
+                </span>
+
+                {/* Kept melds — emerald frame */}
+                <div className="flex flex-1 flex-wrap items-end gap-x-4 gap-y-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300">Keep</span>
+                  {opt.melds.map((rawMeld, mi) => {
+                    const meld = orderMeldForDisplay(rawMeld, wildRank);
+                    return (
+                      <div
+                        key={mi}
+                        className="flex items-end rounded-lg bg-emerald-900/60 px-1.5 py-1 ring-1 ring-emerald-400/40"
+                      >
+                        {meld.map((c, i) => (
+                          <div
+                            key={c}
+                            style={{ marginLeft: i === 0 ? 0 : -28, zIndex: i }}
+                          >
+                            <PlayingCard id={c} wildRank={wildRank} size="sm" />
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Discard — rose frame, visually separated */}
+                <div className="flex shrink-0 items-end gap-2 border-t border-white/10 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-rose-300">Discard</span>
+                    <div className="rounded-lg bg-rose-950/50 p-1 ring-2 ring-rose-400/70">
+                      <PlayingCard id={opt.discard} wildRank={wildRank} size="sm" />
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-5 flex justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-md border border-white/20 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10"
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
