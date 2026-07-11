@@ -11,6 +11,12 @@ exports.handler = withAuth(async (event, { userId }) => {
   const gameId = body.gameId;
   const game = byId(gameId);
   if (!game) return badRequest("Unknown gameId");
+  if (game.status !== "available") return badRequest("Game not yet available");
+
+  const requestedMax = Number(body.maxPlayers);
+  const maxPlayers = Number.isInteger(requestedMax)
+    ? Math.max(game.minPlayers, Math.min(game.maxPlayers, requestedMax))
+    : game.maxPlayers;
 
   const match = {
     matchId: randomUUID(),
@@ -19,8 +25,9 @@ exports.handler = withAuth(async (event, { userId }) => {
     createdAt: new Date().toISOString(),
     createdBy: userId,
     players: [userId],
-    maxPlayers: game.maxPlayers,
-    state: null,
+    maxPlayers,
+    minPlayers: game.minPlayers,
+    version: 0,
   };
   try {
     await ddb.send(new PutCommand({ TableName: tables.matches, Item: match }));
