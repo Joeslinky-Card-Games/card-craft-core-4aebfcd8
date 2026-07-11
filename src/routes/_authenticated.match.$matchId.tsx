@@ -405,15 +405,15 @@ function GameView({
       />
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-30 mix-blend-overlay [background:repeating-linear-gradient(45deg,transparent_0_3px,rgba(255,255,255,0.04)_3px_6px)]" />
 
-      <div className="mx-auto max-w-6xl px-4 py-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+      <div className="mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
           <Link to="/lobby" className="text-white/70 underline hover:text-white">← Lobby</Link>
-          <div className="flex items-center gap-4 rounded-full border border-amber-300/30 bg-black/25 px-4 py-1.5 text-white/80 shadow backdrop-blur">
-            <span>Round <b className="text-amber-200">{match.round}/13</b></span>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-amber-300/30 bg-black/25 px-3 py-1.5 text-white/80 shadow backdrop-blur sm:gap-x-4 sm:rounded-full sm:px-4">
+            <span>R <b className="text-amber-200">{match.round}/13</b></span>
             <span className="text-white/30">·</span>
             <span>Hand <b className="text-amber-200">{match.handSize}</b></span>
             <span className="text-white/30">·</span>
-            <span>Wild <b className="text-amber-300">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b> + ★</span>
+            <span>Wild <b className="text-amber-300">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b>+★</span>
             <span className="text-white/30">·</span>
             <span>Score <b className="text-amber-200">{match.scores?.[userId] ?? 0}</b></span>
             <span className="text-white/30">·</span>
