@@ -320,6 +320,20 @@ function GameView({
   const roundComplete = match.status === "round-complete";
   const matchComplete = match.status === "complete";
   const viewerDone = Boolean((goneOut && goneOut === userId) || match.laidMelds?.[userId]);
+  // After someone goes out, each remaining player gets one final turn. Their
+  // hand becomes visible to everyone once that turn has ended.
+  const finalTurnDone = useMemo(() => {
+    const set = new Set<string>();
+    if (!goneOut || order.length === 0) return set;
+    const startIdx = order.indexOf(goneOut);
+    if (startIdx === -1) return set;
+    const n = order.length;
+    const completed = Math.max(0, (n - 1) - (match.remainingFinalTurns ?? 0));
+    for (let i = 1; i <= completed; i++) {
+      set.add(order[(startIdx + i) % n]);
+    }
+    return set;
+  }, [goneOut, order, match.remainingFinalTurns]);
 
   // Announce the first "went out" event with a dismissible popup so it's not
   // easy to miss when opponents (or you) finish the round early.
