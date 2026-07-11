@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html, body {
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  touch-action: pan-y;
+}
+
 /*
  * Design system definition.
  *

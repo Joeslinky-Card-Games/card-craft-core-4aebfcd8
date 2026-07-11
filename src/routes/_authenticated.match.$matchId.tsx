@@ -413,7 +413,8 @@ function GameView({
 
   return (
     <main
-      className="relative min-h-[calc(100vh-4rem)] min-h-[calc(100dvh-4rem)] w-full overflow-x-hidden pb-[calc(env(safe-area-inset-bottom)+4rem)] sm:pb-4"
+      className="relative min-h-[calc(100vh-4rem)] min-h-[calc(100dvh-4rem)] w-full overflow-x-hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       {/* Felt table backdrop */}
       <div
