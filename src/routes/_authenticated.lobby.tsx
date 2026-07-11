@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useUser } from "@clerk/tanstack-react-start";
 import { API_URL, apiFetch, endpoints, useApi, type CreateMatchPayload, type Game, type Match } from "@/lib/api";
+import { useClerkIdentity } from "@/lib/identity";
 import { MOCK_GAMES } from "@/lib/mock-games";
 import { Button } from "@/components/ui/button";
 import { CreateTableDialog } from "@/components/lobby/CreateTableDialog";
@@ -24,6 +25,7 @@ function LobbyPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const userId = user?.id ?? "";
+  const identity = useClerkIdentity();
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [joinOpen, setJoinOpen] = useState(false);
 
@@ -46,7 +48,7 @@ function LobbyPage() {
 
   const createMut = useMutation({
     mutationFn: (payload: CreateMatchPayload) =>
-      api<Match>("/matches", { method: "POST", body: payload }),
+      api<Match>("/matches", { method: "POST", body: { ...identity, ...payload } }),
     onSuccess: (m) => {
       qc.invalidateQueries({ queryKey: ["matches", "mine"] });
       setSelectedGame(null);
@@ -168,6 +170,7 @@ function LobbyPage() {
         onOpenChange={setJoinOpen}
         games={games}
         userId={userId}
+        identity={identity}
       />
     </main>
   );
