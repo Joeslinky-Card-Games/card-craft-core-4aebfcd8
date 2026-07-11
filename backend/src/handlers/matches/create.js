@@ -5,7 +5,17 @@ const { created, badRequest, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { byId } = require("../../lib/games");
 
-exports.handler = withAuth(async (event, { userId }) => {
+function displayName(userId, claims) {
+  return (
+    claims?.username ||
+    claims?.preferred_username ||
+    claims?.name ||
+    claims?.email ||
+    `player-${String(userId).slice(-4)}`
+  );
+}
+
+exports.handler = withAuth(async (event, { userId, claims }) => {
   let body;
   try { body = JSON.parse(event.body || "{}"); } catch { return badRequest("Invalid JSON"); }
   const gameId = body.gameId;
@@ -25,6 +35,7 @@ exports.handler = withAuth(async (event, { userId }) => {
     createdAt: new Date().toISOString(),
     createdBy: userId,
     players: [userId],
+    usernames: { [userId]: displayName(userId, claims) },
     maxPlayers,
     minPlayers: game.minPlayers,
     version: 0,
