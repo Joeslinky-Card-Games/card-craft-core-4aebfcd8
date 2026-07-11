@@ -62,12 +62,41 @@ export type Game = {
 export type Match = {
   matchId: string;
   gameId: string;
-  status: "open" | "in-progress" | "complete";
+  status: "open" | "in-progress" | "round-complete" | "complete";
   createdAt: string;
   createdBy: string;
   players: string[];
   maxPlayers: number;
+  minPlayers?: number;
+  version?: number;
 };
+
+/** Per-user redacted match view returned by GET /matches/{id}, POST /start, /action, /next-round. */
+export type MatchView = Match & {
+  round?: number;
+  handSize?: number;
+  wildRank?: string | null;
+  turn?: number;
+  discard?: string[];
+  stockCount?: number;
+  hands?: Record<string, string[]>; // only caller's userId is populated
+  handCounts?: Record<string, number>;
+  scores?: Record<string, number>;
+  lastRoundScores?: Record<string, number> | null;
+  goneOutBy?: string | null;
+  remainingFinalTurns?: number;
+  hasDrawn?: boolean;
+  laidMelds?: Record<string, string[][]>;
+  winner?: string;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  _order?: string[];
+};
+
+export type GameAction =
+  | { type: "draw-stock" }
+  | { type: "draw-discard" }
+  | { type: "discard"; card: string }
+  | { type: "lay-down"; melds: string[][]; discard: string };
 
 export type Profile = {
   userId: string;
