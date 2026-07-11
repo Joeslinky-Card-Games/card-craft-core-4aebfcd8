@@ -1,6 +1,7 @@
 const { QueryCommand } = require("@aws-sdk/lib-dynamodb");
 const { ddb, tables } = require("../../lib/dynamo");
 const { ok, serverError } = require("../../lib/response");
+const { stripSecret } = require("../../lib/matches");
 
 exports.handler = async (event) => {
   const status = event.queryStringParameters?.status || "open";
@@ -16,7 +17,10 @@ exports.handler = async (event) => {
         Limit: 50,
       })
     );
-    return ok({ matches: res.Items || [] });
+    const items = (res.Items || [])
+      .filter((m) => m.visibility !== "private")
+      .map(stripSecret);
+    return ok({ matches: items });
   } catch (err) {
     console.error(err);
     return serverError();

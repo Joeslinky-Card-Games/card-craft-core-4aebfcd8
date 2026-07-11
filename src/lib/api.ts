@@ -71,6 +71,7 @@ export type Match = {
   maxPlayers: number;
   minPlayers?: number;
   version?: number;
+  visibility?: "public" | "private";
 };
 
 /** Per-user redacted match view returned by GET /matches/{id}, POST /start, /action, /next-round. */
@@ -123,3 +124,12 @@ export const endpoints = {
       `/stats/leaderboard?gameId=${encodeURIComponent(gameId)}`,
     ),
 };
+
+export type CreateMatchPayload = {
+  gameId: string;
+  maxPlayers: number;
+  visibility?: "public" | "private";
+  password?: string;
+};
+
+export type JoinMatchPayload = { password?: string };

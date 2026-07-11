@@ -126,6 +126,22 @@ Resources:
             Method: GET
             Path: /matches
 
+  MyMatchesFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/mine.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MatchesTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /matches/mine
+
   CreateMatchFn:
     Type: AWS::Serverless::Function
     Properties:

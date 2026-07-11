@@ -1,7 +1,8 @@
-const { UpdateCommand } = require("@aws-sdk/lib-dynamodb");
+const { GetCommand, UpdateCommand } = require("@aws-sdk/lib-dynamodb");
 const { ddb, tables } = require("../../lib/dynamo");
-const { ok, badRequest, serverError } = require("../../lib/response");
+const { ok, badRequest, unauthorized, notFound, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
+const { hashPassword, stripSecret } = require("../../lib/matches");
 
 function displayName(userId, claims) {
   return (
@@ -21,7 +22,26 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
   const matchId = event.pathParameters?.matchId;
   const name = displayName(userId, claims);
   const avatar = avatarUrl(claims);
+  let body = {};
+  try { body = event.body ? JSON.parse(event.body) : {}; } catch { return badRequest("Invalid JSON"); }
+
   try {
+    // Load first to validate visibility/password and handle idempotent re-entry.
+    const existing = await ddb.send(new GetCommand({ TableName: tables.matches, Key: { matchId } }));
+    if (!existing.Item) return notFound("Table not found");
+    const match = existing.Item;
+
+    if (match.visibility === "private") {
+      const pw = typeof body.password === "string" ? body.password.trim() : "";
+      if (!pw) return unauthorized("Password required");
+      if (hashPassword(pw) !== match.passwordHash) return unauthorized("Incorrect password");
+    }
+
+    // Idempotent re-entry: already a player, return current state.
+    if (Array.isArray(match.players) && match.players.includes(userId)) {
+      return ok(stripSecret(match));
+    }
+
     const res = await ddb.send(
       new UpdateCommand({
         TableName: tables.matches,
@@ -43,7 +63,7 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
         ReturnValues: "ALL_NEW",
       })
     );
-    return ok(res.Attributes);
+    return ok(stripSecret(res.Attributes));
   } catch (err) {
     if (err.name === "ConditionalCheckFailedException") return badRequest("Cannot join match");
     console.error(err);
