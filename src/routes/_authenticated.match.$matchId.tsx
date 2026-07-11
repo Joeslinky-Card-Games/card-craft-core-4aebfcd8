@@ -818,6 +818,14 @@ function SeatCard({
   laidMelds?: string[][];
   wildRank: string | null;
 }) {
+  // Laid-down melds can crowd the table when several players go out — hide by
+  // default on small screens, expand on desktop, always toggleable.
+  const [meldsOpen, setMeldsOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setMeldsOpen(window.matchMedia("(min-width: 640px)").matches);
+  }, []);
+  const meldCount = laidMelds?.reduce((s, m) => s + m.length, 0) ?? 0;
   return (
     <div
       className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 backdrop-blur transition-all ${
@@ -836,14 +844,26 @@ function SeatCard({
         </div>
       </div>
       {laidMelds && laidMelds.length > 0 ? (
-        <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
-          {laidMelds.map((meld, i) => (
-            <div key={i} className="flex -space-x-3">
-              {orderMeldForDisplay(meld, wildRank).map((c) => (
-                <PlayingCard key={c} id={c} wildRank={wildRank} size="sm" />
+        <div className="mt-1 flex flex-col items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setMeldsOpen((v) => !v)}
+            className="rounded-full border border-emerald-300/30 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-100 hover:bg-emerald-500/30"
+            aria-expanded={meldsOpen}
+          >
+            {meldsOpen ? "Hide" : "Show"} hand · {laidMelds.length} meld{laidMelds.length === 1 ? "" : "s"} · {meldCount}
+          </button>
+          {meldsOpen && (
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {laidMelds.map((meld, i) => (
+                <div key={i} className="flex -space-x-3">
+                  {orderMeldForDisplay(meld, wildRank).map((c) => (
+                    <PlayingCard key={c} id={c} wildRank={wildRank} size="sm" />
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
+          )}
         </div>
       ) : (
       <div className="relative mt-1 flex h-8 items-center justify-center">
