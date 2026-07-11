@@ -407,11 +407,9 @@ function GameView({
           <span className="text-amber-200">Your turn — {
             !match.hasDrawn
               ? "draw a card"
-              : pickingGoOutDiscard
-                ? "tap one of the highlighted cards to discard and go out"
-                : canLayDown
-                  ? "tap a card to discard, or lay down to go out"
-                  : "tap a card to discard"
+              : canLayDown
+                ? "tap a card to discard, or lay down to go out"
+                : "tap a card to discard"
           }.</span>
         ) : (
           <span className="text-white/70">Waiting on {displayName(match, currentUser, userId)}…</span>
