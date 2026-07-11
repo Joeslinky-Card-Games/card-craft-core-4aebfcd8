@@ -1202,23 +1202,25 @@ function GoOutOptionsPicker({
   onCancel: () => void;
   onPick: (opt: { discard: string; melds: string[][] }) => void;
 }) {
-  // Deduplicate by discard card in case the solver returned equivalents.
+  // Deduplicate by discard rank+suit (ignore deck copy) so equivalent
+  // options aren't shown twice when the hand contains duplicate cards.
   const seen = new Set<string>();
   const unique = options.filter((o) => {
-    if (seen.has(o.discard)) return false;
-    seen.add(o.discard);
+    const key = o.discard.startsWith("JK") ? "JK" : o.discard.slice(0, 2);
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-3 backdrop-blur-sm sm:p-4">
       <motion.div
         initial={{ scale: 0.94, opacity: 0, y: 12 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="w-full max-w-3xl rounded-2xl border border-amber-300/30 bg-gradient-to-br from-emerald-950 to-emerald-900 p-6 text-white shadow-2xl"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col rounded-2xl border border-amber-300/30 bg-gradient-to-br from-emerald-950 to-emerald-900 p-4 text-white shadow-2xl sm:p-6"
       >
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="mb-4 flex shrink-0 items-start justify-between gap-4">
           <div>
             <h2 className="font-serif text-2xl font-bold text-amber-100">Pick how to go out</h2>
             <p className="mt-1 text-sm text-white/70">
@@ -1235,7 +1237,7 @@ function GoOutOptionsPicker({
           </button>
         </div>
 
-        <ul className="max-h-[65vh] space-y-3 overflow-y-auto pr-1">
+        <ul className="-mr-1 flex-1 space-y-3 overflow-y-auto pr-1">
           {unique.map((opt, idx) => (
             <li key={opt.discard}>
               <button
