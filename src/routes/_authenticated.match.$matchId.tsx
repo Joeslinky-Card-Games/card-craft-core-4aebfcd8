@@ -114,12 +114,14 @@ function Centered({ children }: { children: React.ReactNode }) {
 function LobbyView({
   match,
   userId,
+  selfImage,
   onStart,
   starting,
   startError,
 }: {
   match: MatchView;
   userId: string;
+  selfImage: string | null;
   onStart: () => void;
   starting: boolean;
   startError: string | null;
@@ -142,10 +144,11 @@ function LobbyView({
         <ul className="mt-3 space-y-2">
           {match.players.map((p) => {
             const name = displayName(match, p, userId);
+            const img = avatarOf(match, p, userId, selfImage);
             return (
               <li key={p} className="flex items-center justify-between rounded-md bg-black/30 px-3 py-2 text-sm text-white">
                 <div className="flex items-center gap-2">
-                  <Avatar name={name} userId={p} size="sm" />
+                  <Avatar name={name} userId={p} imageUrl={img} size="sm" />
                   <span>{name}</span>
                 </div>
                 {p === match.createdBy && <span className="text-xs text-amber-200/70">host</span>}
@@ -175,6 +178,7 @@ function LobbyView({
 function GameView({
   match,
   userId,
+  selfImage,
   onAction,
   onNextRound,
   pending,
@@ -182,6 +186,7 @@ function GameView({
 }: {
   match: MatchView;
   userId: string;
+  selfImage: string | null;
   onAction: (a: GameAction) => void;
   onNextRound: () => void;
   pending: boolean;
@@ -252,6 +257,7 @@ function GameView({
           opponents={opponents}
           match={match}
           userId={userId}
+          selfImage={selfImage}
           currentUser={currentUser}
           isMyTurn={isMyTurn}
           pending={pending}
