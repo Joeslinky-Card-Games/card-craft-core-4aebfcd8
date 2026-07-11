@@ -318,15 +318,14 @@ function GameView({
   }, [canLayDown, goOutOptions.length]);
 
   const handleCardClick = (card: string) => {
-    if (pickingGoOutDiscard) {
-      const chosen = goOutOptions.find((o) => o.discard === card);
-      if (!chosen) return;
-      setPickingGoOutDiscard(false);
-      onAction({ type: "lay-down", melds: chosen.melds, discard: chosen.discard });
-      return;
-    }
+    if (pickingGoOutDiscard) return; // picker modal handles selection
     if (!canDiscard) return;
     onAction({ type: "discard", card });
+  };
+
+  const handlePickOption = (opt: { discard: string; melds: string[][] }) => {
+    setPickingGoOutDiscard(false);
+    onAction({ type: "lay-down", melds: opt.melds, discard: opt.discard });
   };
 
   const handleLayDown = () => {
