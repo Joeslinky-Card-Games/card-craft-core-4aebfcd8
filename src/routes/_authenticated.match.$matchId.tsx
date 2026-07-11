@@ -812,6 +812,8 @@ function SeatCard({
   score,
   wentOut,
   laidMelds,
+  hand,
+  roundComplete,
   wildRank,
 }: {
   name: string;
@@ -822,12 +824,15 @@ function SeatCard({
   score: number;
   wentOut: boolean;
   laidMelds?: string[][];
+  hand?: string[];
+  roundComplete: boolean;
   wildRank: string | null;
 }) {
-  // Laid-down melds crowd the table when several players go out — open in a
-  // full-screen modal on demand so nothing obstructs the table UI.
+  // Laid-down melds and final hands crowd the table when several players go
+  // out — open in a full-screen modal on demand so nothing obstructs the table UI.
   const [meldsOpen, setMeldsOpen] = useState(false);
   const meldCount = laidMelds?.reduce((s, m) => s + m.length, 0) ?? 0;
+  const canShowHand = (laidMelds && laidMelds.length > 0) || (roundComplete && hand && hand.length > 0);
   return (
     <div
       className={`flex w-max min-w-[10rem] flex-col items-center gap-1 rounded-xl px-3 py-2 backdrop-blur transition-all ${
@@ -845,7 +850,7 @@ function SeatCard({
           </div>
         </div>
       </div>
-      {laidMelds && laidMelds.length > 0 ? (
+      {canShowHand ? (
         <div className="mt-1 flex w-full flex-col items-center gap-1">
           <button
             type="button"
@@ -853,12 +858,15 @@ function SeatCard({
             className="w-full rounded-full border border-emerald-300/30 bg-emerald-500/20 px-2 py-0.5 text-center text-[10px] font-semibold uppercase tracking-wide text-emerald-100 hover:bg-emerald-500/30"
             aria-expanded={meldsOpen}
           >
-            Show hand · {laidMelds.length} meld{laidMelds.length === 1 ? "" : "s"} · {meldCount}
+            {laidMelds && laidMelds.length > 0
+              ? `Show hand · ${laidMelds.length} meld${laidMelds.length === 1 ? "" : "s"} · ${meldCount}`
+              : `Show hand · ${hand?.length} card${hand?.length === 1 ? "" : "s"}`}
           </button>
           {meldsOpen && (
             <LaidMeldsDialog
               name={name}
               laidMelds={laidMelds}
+              hand={hand}
               wildRank={wildRank}
               onClose={() => setMeldsOpen(false)}
             />
