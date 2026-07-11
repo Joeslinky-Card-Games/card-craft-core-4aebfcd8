@@ -479,8 +479,7 @@ function GameView({
       >
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-200/70">
-            Your hand — {sorted.length} card{sorted.length === 1 ? "" : "s"} · unmelded {" "}
-            <b className="text-amber-100">{unmeldedScore}</b>
+            Hand Score: <b className="text-amber-100">{unmeldedScore}</b>
           </h2>
           {canLayDown && (
             <button
