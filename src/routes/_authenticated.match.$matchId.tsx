@@ -307,10 +307,6 @@ function GameView({
 
   const goOutOptions = arrangement.goOutOptions ?? [];
   const [pickingGoOutDiscard, setPickingGoOutDiscard] = useState(false);
-  const goOutDiscardChoices = useMemo(
-    () => new Set(goOutOptions.map((o) => o.discard)),
-    [goOutOptions],
-  );
 
   // Reset the picker if the state that gates it changes.
   useEffect(() => {
