@@ -312,7 +312,10 @@ function GameView({
     setRulesOpen(false);
   };
 
-  const opponents = order.filter((p) => p !== userId);
+  // Seat positions are based on the stable player list (join order), NOT the
+  // per-round `_order` which rotates with the dealer. Keeping seats fixed
+  // means play always visually passes the same direction around the table.
+  const opponents = match.players.filter((p) => p !== userId);
   const goneOut = match.goneOutBy;
   const roundComplete = match.status === "round-complete";
   const matchComplete = match.status === "complete";
