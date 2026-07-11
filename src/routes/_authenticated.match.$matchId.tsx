@@ -494,6 +494,7 @@ function GameView({
           roundComplete={roundComplete}
           matchComplete={matchComplete}
           viewerDone={viewerDone}
+          finalTurnDone={finalTurnDone}
           discardTop={discardTop}
           wildRank={wildRank}
           onAction={onAction}
