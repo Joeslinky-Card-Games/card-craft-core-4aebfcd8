@@ -394,7 +394,9 @@ function GameView({
   };
 
   return (
-    <main className="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden">
+    <main
+      className="relative min-h-[calc(100vh-4rem)] min-h-[calc(100dvh-4rem)] w-full overflow-x-hidden pb-[calc(env(safe-area-inset-bottom)+4rem)] sm:pb-4"
+    >
       {/* Felt table backdrop */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
@@ -1003,7 +1005,12 @@ function ChatPanel({
   };
 
   return (
-    <div className="fixed bottom-3 right-3 z-40 flex flex-col items-end sm:bottom-4 sm:right-4">
+    <div
+      className="fixed right-3 z-40 flex flex-col items-end sm:right-4"
+      style={{
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
+      }}
+    >
       {open && (
         <div className="mb-2 flex w-80 max-w-[calc(100vw-2rem)] flex-col rounded-2xl border border-amber-300/30 bg-emerald-950/95 shadow-2xl backdrop-blur">
           <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
