@@ -92,8 +92,16 @@ export type MatchView = Match & {
   hasDrawn?: boolean;
   laidMelds?: Record<string, string[][]>;
   winner?: string;
+  chatMessages?: ChatMessage[];
   // eslint-disable-next-line @typescript-eslint/naming-convention
   _order?: string[];
+};
+
+export type ChatMessage = {
+  id: string;
+  userId: string;
+  text: string;
+  at: number;
 };
 
 export type GameAction =
