@@ -39,7 +39,7 @@ export function PlayingCard({
 }) {
   const c = parseCard(id);
   const wild = isWild(id, wildRank);
-  const base = `relative select-none rounded-lg border border-slate-200 bg-gradient-to-br from-white to-slate-100 text-slate-900 flex flex-col items-center justify-center font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.35)] ${sizeClasses[size]}`;
+  const base = `relative select-none rounded-lg border border-slate-200 bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.35)] ${sizeClasses[size]}`;
   const state = [
     selected ? "ring-2 ring-amber-300 -translate-y-3 shadow-[0_8px_18px_rgba(0,0,0,0.5)]" : "",
     faded ? "opacity-40" : "",
@@ -59,7 +59,7 @@ export function PlayingCard({
   }
 
   const red = isRedSuit(c.suit);
-  const color = red ? "text-rose-600" : "text-slate-900";
+  const color = red ? "!text-rose-600" : "!text-slate-900";
   return (
     <button type="button" onClick={onClick} className={`${base} ${state} ${color} ${className}`}>
       <div className={`absolute left-1.5 top-1 flex flex-col items-center leading-none ${cornerSize[size]}`}>

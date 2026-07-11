@@ -143,23 +143,53 @@ export function autoArrange(
     }
   }
 
-  // No complete lay-down. Return best partial: greedy — pick largest meld repeatedly.
-  const sortedCands = [...candidates].sort((a, b) => popcount(b.mask) - popcount(a.mask));
-  const usedMask = { v: 0 };
-  const picked: { mask: number; cards: string[] }[] = [];
-  for (const c of sortedCands) {
-    if ((c.mask & usedMask.v) === 0) {
-      picked.push(c);
-      usedMask.v |= c.mask;
+  // No complete lay-down. Find the arrangement that MINIMIZES unmelded points
+  // (i.e. reorganize even if that means smaller melds, when lower-scoring cards
+  // get melded instead).
+  const cardPts = hand.map((c) => cardPoints(c));
+  // Precompute point value of each candidate's melded cards.
+  const cands = candidates.map((c) => ({
+    ...c,
+    pts: sumBitsPts(c.mask, cardPts),
+  }));
+  // Sort by points-per-card desc to prune aggressively.
+  cands.sort((a, b) => b.pts - a.pts);
+
+  let bestMelded = 0;
+  let bestPicked: { mask: number; cards: string[] }[] = [];
+
+  const dfs = (start: number, usedMask: number, meldedPts: number, picked: { mask: number; cards: string[] }[]) => {
+    if (meldedPts > bestMelded) {
+      bestMelded = meldedPts;
+      bestPicked = picked.slice();
     }
-  }
-  return { melds: picked.map((m) => m.cards), discard: null, complete: false };
+    // Upper bound: remaining candidates that don't collide with used.
+    let remaining = 0;
+    for (let i = start; i < cands.length; i++) {
+      if ((cands[i].mask & usedMask) === 0) remaining += cands[i].pts;
+    }
+    if (meldedPts + remaining <= bestMelded) return;
+    for (let i = start; i < cands.length; i++) {
+      const c = cands[i];
+      if ((c.mask & usedMask) !== 0) continue;
+      picked.push(c);
+      dfs(i + 1, usedMask | c.mask, meldedPts + c.pts, picked);
+      picked.pop();
+    }
+  };
+  dfs(0, 0, 0, []);
+  return { melds: bestPicked.map((m) => m.cards), discard: null, complete: false };
 }
 
-function popcount(x: number): number {
-  let c = 0;
-  while (x) { x &= x - 1; c++; }
-  return c;
+function sumBitsPts(mask: number, pts: number[]): number {
+  let s = 0;
+  let i = 0;
+  while (mask) {
+    if (mask & 1) s += pts[i];
+    mask >>>= 1;
+    i++;
+  }
+  return s;
 }
 
 function cover(
