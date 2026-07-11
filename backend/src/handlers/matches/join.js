@@ -28,7 +28,7 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
         Key: { matchId },
         ConditionExpression: "attribute_exists(matchId) AND #s = :open AND size(players) < maxPlayers AND NOT contains(players, :uid)",
         UpdateExpression:
-          "SET players = list_append(players, :p), usernames.#uid = :name, avatars = if_not_exists(avatars, :emptyMap)" +
+          "SET players = list_append(players, :p), usernames.#uid = :name" +
           (avatar ? ", avatars.#uid = :avatar" : "") +
           " ADD version :one",
         ExpressionAttributeNames: { "#s": "status", "#uid": userId },
@@ -38,7 +38,6 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
           ":p": [userId],
           ":one": 1,
           ":name": name,
-          ":emptyMap": {},
           ...(avatar ? { ":avatar": avatar } : {}),
         },
         ReturnValues: "ALL_NEW",
