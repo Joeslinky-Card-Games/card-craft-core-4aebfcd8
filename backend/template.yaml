@@ -242,6 +242,22 @@ Resources:
             Method: POST
             Path: /matches/{matchId}/identify
 
+  ChatMatchFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/chat.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches/{matchId}/chat
+
   MatchActionFn:
     Type: AWS::Serverless::Function
     Properties:
