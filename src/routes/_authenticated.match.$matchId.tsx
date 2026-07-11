@@ -910,11 +910,13 @@ function SeatCard({
 function LaidMeldsDialog({
   name,
   laidMelds,
+  hand,
   wildRank,
   onClose,
 }: {
   name: string;
-  laidMelds: string[][];
+  laidMelds?: string[][];
+  hand?: string[];
   wildRank: string | null;
   onClose: () => void;
 }) {
@@ -923,6 +925,7 @@ function LaidMeldsDialog({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+  const displayCards = hand && hand.length > 0 ? sortHand(hand, wildRank) : [];
   if (typeof document === "undefined") return null;
   return createPortal(
     <div
@@ -942,7 +945,11 @@ function LaidMeldsDialog({
           <div>
             <h2 className="font-serif text-lg font-bold text-amber-100 sm:text-xl">{name}'s hand</h2>
             <p className="text-[11px] uppercase tracking-wider text-white/60">
-              {laidMelds.length} meld{laidMelds.length === 1 ? "" : "s"} laid down
+              {laidMelds && laidMelds.length > 0
+                ? `${laidMelds.length} meld${laidMelds.length === 1 ? "" : "s"} laid down`
+                : hand && hand.length > 0
+                  ? `${hand.length} card${hand.length === 1 ? "" : "s"} remaining`
+                  : "No cards to show"}
             </p>
           </div>
           <button
@@ -952,17 +959,26 @@ function LaidMeldsDialog({
             Close
           </button>
         </div>
-        <div className="flex flex-wrap items-start justify-center gap-3">
-          {laidMelds.map((meld, i) => (
-            <div key={i} className="rounded-lg bg-emerald-900/50 px-2 py-1 ring-1 ring-amber-300/40">
-              <div className="flex -space-x-6 sm:-space-x-8">
-                {orderMeldForDisplay(meld, wildRank).map((c) => (
-                  <PlayingCard key={c} id={c} wildRank={wildRank} />
-                ))}
+        {laidMelds && laidMelds.length > 0 && (
+          <div className="flex flex-wrap items-start justify-center gap-3">
+            {laidMelds.map((meld, i) => (
+              <div key={i} className="rounded-lg bg-emerald-900/50 px-2 py-1 ring-1 ring-amber-300/40">
+                <div className="flex -space-x-6 sm:-space-x-8">
+                  {orderMeldForDisplay(meld, wildRank).map((c) => (
+                    <PlayingCard key={c} id={c} wildRank={wildRank} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+        {displayCards.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-start justify-center gap-2">
+            {displayCards.map((c) => (
+              <PlayingCard key={c} id={c} wildRank={wildRank} />
+            ))}
+          </div>
+        )}
       </motion.div>
     </div>,
     document.body,
