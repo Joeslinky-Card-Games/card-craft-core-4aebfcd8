@@ -11,6 +11,12 @@ import { sortHand, cardPoints } from "@/lib/game/cards";
 import { autoArrange, orderMeldForDisplay } from "@/lib/game/melds";
 import { RulesDialog } from "@/components/game/RulesDialog";
 import {
+  ensureNotificationPermission,
+  showNotification,
+  playChatSound,
+  playTurnSound,
+} from "@/lib/notify";
+import {
   DndContext,
   PointerSensor,
   useSensor,
