@@ -2,7 +2,7 @@ const { GetCommand, UpdateCommand } = require("@aws-sdk/lib-dynamodb");
 const { ddb, tables } = require("../../lib/dynamo");
 const { ok, badRequest, unauthorized, notFound, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
-const { hashPassword, stripSecret } = require("../../lib/matches");
+const { hashPassword, stripSecret, ttlForStatus } = require("../../lib/matches");
 
 function displayName(userId, claims) {
   return (
@@ -48,16 +48,17 @@ exports.handler = withAuth(async (event, { userId, claims }) => {
         Key: { matchId },
         ConditionExpression: "attribute_exists(matchId) AND #s = :open AND size(players) < maxPlayers AND NOT contains(players, :uid)",
         UpdateExpression:
-          "SET players = list_append(players, :p), usernames.#uid = :name" +
+          "SET players = list_append(players, :p), usernames.#uid = :name, #ttl = :ttl" +
           (avatar ? ", avatars.#uid = :avatar" : "") +
           " ADD version :one",
-        ExpressionAttributeNames: { "#s": "status", "#uid": userId },
+        ExpressionAttributeNames: { "#s": "status", "#uid": userId, "#ttl": "ttl" },
         ExpressionAttributeValues: {
           ":open": "open",
           ":uid": userId,
           ":p": [userId],
           ":one": 1,
           ":name": name,
+          ":ttl": ttlForStatus("open"),
           ...(avatar ? { ":avatar": avatar } : {}),
         },
         ReturnValues: "ALL_NEW",
