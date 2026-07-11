@@ -652,7 +652,7 @@ function TableArea({
   });
 
   return (
-    <div className="relative mx-auto aspect-[16/9] w-full max-w-4xl">
+    <div className="relative mx-auto aspect-[4/3] w-full max-w-4xl sm:aspect-[16/9]">
       {/* Oval table */}
       <div
         className="absolute inset-4 rounded-[50%] border-[10px] border-amber-950/80 shadow-[inset_0_0_60px_rgba(0,0,0,0.55),0_20px_50px_rgba(0,0,0,0.5)]"
@@ -690,7 +690,7 @@ function TableArea({
       })}
 
       {/* Center piles */}
-      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-6">
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 sm:gap-6">
         {(() => {
           const canDrawStock = isMyTurn && !match.hasDrawn && !pending && !roundComplete;
           const canDrawDiscard = canDrawStock && Boolean(discardTop);
@@ -717,7 +717,7 @@ function TableArea({
                 whileHover={canDrawDiscard ? { y: -8, scale: 1.04 } : undefined}
                 whileTap={canDrawDiscard ? { scale: 0.97 } : undefined}
                 transition={{ type: "spring", stiffness: 320, damping: 22 }}
-                className={`relative h-32 w-24 rounded-lg ${canDrawDiscard ? "cursor-pointer shadow-[0_0_18px_rgba(251,191,36,0.35)] ring-2 ring-amber-300/70" : "cursor-default"} disabled:opacity-80`}
+                className={`relative h-24 w-16 rounded-lg sm:h-32 sm:w-24 ${canDrawDiscard ? "cursor-pointer shadow-[0_0_18px_rgba(251,191,36,0.35)] ring-2 ring-amber-300/70" : "cursor-default"} disabled:opacity-80`}
               >
                 <AnimatePresence mode="popLayout">
                   {discardTop ? (
