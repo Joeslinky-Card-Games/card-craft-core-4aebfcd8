@@ -526,6 +526,15 @@ function GameView({
         onOpenChange={setRulesOpen}
         onDontShowAgain={dontShowAgain}
       />
+      {pickingGoOutDiscard && (
+        <GoOutOptionsPicker
+          options={goOutOptions}
+          wildRank={wildRank}
+          pending={pending}
+          onCancel={() => setPickingGoOutDiscard(false)}
+          onPick={handlePickOption}
+        />
+      )}
       <ChatPanel
         match={match}
         userId={userId}
