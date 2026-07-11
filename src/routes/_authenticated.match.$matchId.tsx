@@ -224,8 +224,12 @@ function GameView({
   };
 
   const handleLayDown = () => {
-    if (!arrangement.complete || !arrangement.discard) return;
-    onAction({ type: "lay-down", melds: arrangement.melds, discard: arrangement.discard });
+    if (!arrangement.complete || !arrangement.goOutMelds || !arrangement.goOutDiscard) return;
+    onAction({
+      type: "lay-down",
+      melds: arrangement.goOutMelds,
+      discard: arrangement.goOutDiscard,
+    });
   };
 
   return (
