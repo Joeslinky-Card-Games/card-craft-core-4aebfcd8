@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useMemo } from "react";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useUser } from "@clerk/tanstack-react-start";
 import { useApi, type GameAction, type MatchView } from "@/lib/api";
 import { PlayingCard, CardBack, EmptyCardSlot } from "@/components/game/PlayingCard";
@@ -164,8 +164,6 @@ function LobbyView({
 
 // -------- Game view --------
 
-type UiMode = "idle" | "meld";
-
 function GameView({
   match,
   userId,
@@ -188,12 +186,6 @@ function GameView({
   const sorted = useMemo(() => sortHand(myHand, match.wildRank), [myHand, match.wildRank]);
   const wildRank = match.wildRank ?? null;
 
-  // Meld staging state (client-only until "Lay down" fires).
-  const [mode, setMode] = useState<UiMode>("idle");
-  const [currentMeld, setCurrentMeld] = useState<string[]>([]);
-  const [stagedMelds, setStagedMelds] = useState<string[][]>([]);
-  const usedInMelds = new Set([...stagedMelds.flat(), ...currentMeld]);
-
   const opponents = order.filter((p) => p !== userId);
   const goneOut = match.goneOutBy;
   const roundComplete = match.status === "round-complete";
@@ -201,53 +193,26 @@ function GameView({
 
   const discardTop = match.discard && match.discard.length > 0 ? match.discard[match.discard.length - 1] : null;
 
-  const resetMeld = () => { setMode("idle"); setCurrentMeld([]); setStagedMelds([]); };
-
-  const toggleCardForMeld = (card: string) => {
-    if (usedInMelds.has(card)) {
-      // remove from wherever it is
-      if (currentMeld.includes(card)) setCurrentMeld(currentMeld.filter((c) => c !== card));
-      else setStagedMelds(stagedMelds.map((m) => m.filter((c) => c !== card)).filter((m) => m.length > 0));
-    } else {
-      setCurrentMeld([...currentMeld, card]);
-    }
-  };
-
-  const commitCurrentMeld = () => {
-    if (currentMeld.length >= 3) {
-      setStagedMelds([...stagedMelds, currentMeld]);
-      setCurrentMeld([]);
-    }
-  };
+  // Automatic meld arrangement — recomputes any time the hand changes.
+  const arrangement = useMemo(
+    () => autoArrange(myHand, wildRank),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [myHand.join("|"), wildRank],
+  );
+  const meldedIds = useMemo(() => new Set(arrangement.melds.flat()), [arrangement]);
+  const unmelded = useMemo(() => sorted.filter((c) => !meldedIds.has(c)), [sorted, meldedIds]);
+  const unmeldedScore = unmelded.reduce((s, c) => s + cardPoints(c), 0);
+  const canLayDown = arrangement.complete && arrangement.discard !== null && isMyTurn && Boolean(match.hasDrawn) && !roundComplete && !matchComplete;
+  const canDiscard = isMyTurn && Boolean(match.hasDrawn) && !roundComplete && !matchComplete;
 
   const handleCardClick = (card: string) => {
-    if (mode === "meld") { toggleCardForMeld(card); return; }
-    if (!isMyTurn || !match.hasDrawn || goneOut) return;
+    if (!canDiscard) return;
     onAction({ type: "discard", card });
   };
 
   const handleLayDown = () => {
-    // discard the last unused, unmelded card in hand
-    const remaining = sorted.filter((c) => !usedInMelds.has(c));
-    if (remaining.length !== 1) {
-      alert("Lay down requires all cards melded except exactly one to discard.");
-      return;
-    }
-    onAction({ type: "lay-down", melds: stagedMelds.concat(currentMeld.length ? [currentMeld] : []), discard: remaining[0] });
-    resetMeld();
-  };
-
-  const handleAutoArrange = () => {
-    const result = autoArrange(myHand, wildRank);
-    if (result.complete && result.discard) {
-      onAction({ type: "lay-down", melds: result.melds, discard: result.discard });
-      resetMeld();
-      return;
-    }
-    // Partial: stage the melds it did find so the user can adjust.
-    setMode("meld");
-    setStagedMelds(result.melds);
-    setCurrentMeld([]);
+    if (!arrangement.complete || !arrangement.discard) return;
+    onAction({ type: "lay-down", melds: arrangement.melds, discard: arrangement.discard });
   };
 
   return (
@@ -302,7 +267,7 @@ function GameView({
             {" "}Final turns remaining: {match.remainingFinalTurns}.
           </span>
         ) : isMyTurn ? (
-          <span className="text-amber-200">Your turn — {match.hasDrawn ? "discard or lay down" : "draw a card"}.</span>
+          <span className="text-amber-200">Your turn — {match.hasDrawn ? "tap a card to discard, or lay down" : "draw a card"}.</span>
         ) : (
           <span className="text-white/70">Waiting on {displayName(match, currentUser, userId)}…</span>
         )}
@@ -314,99 +279,97 @@ function GameView({
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-200/70">
             Your hand — {sorted.length} card{sorted.length === 1 ? "" : "s"} · unmelded {" "}
-            <b className="text-amber-100">{sorted.filter((c) => !usedInMelds.has(c)).reduce((s, c) => s + cardPoints(c), 0)}</b>
+            <b className="text-amber-100">{unmeldedScore}</b>
           </h2>
-          <div className="flex gap-2">
-            {mode === "idle" ? (
-              <>
-                <button
-                  disabled={!isMyTurn || !match.hasDrawn || Boolean(goneOut) || roundComplete}
-                  onClick={handleAutoArrange}
-                  className="rounded-md bg-amber-400 px-3 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
-                >
-                  Auto-arrange
-                </button>
-                <button
-                  disabled={!isMyTurn || !match.hasDrawn || Boolean(goneOut) || roundComplete}
-                  onClick={() => setMode("meld")}
-                  className="rounded-md border border-amber-300/60 px-3 py-1 text-xs font-medium text-amber-200 hover:bg-amber-300/10 disabled:opacity-40"
-                >
-                  Manual…
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={handleAutoArrange}
-                  className="rounded-md border border-amber-300/60 px-3 py-1 text-xs text-amber-200 hover:bg-amber-300/10"
-                >
-                  Auto
-                </button>
-                <button
-                  disabled={currentMeld.length < 3}
-                  onClick={commitCurrentMeld}
-                  className="rounded-md border border-amber-300/60 px-3 py-1 text-xs text-amber-200 hover:bg-amber-300/10 disabled:opacity-40"
-                >
-                  Add meld ({currentMeld.length})
-                </button>
-                <button
-                  disabled={stagedMelds.length === 0 && currentMeld.length === 0}
-                  onClick={handleLayDown}
-                  className="rounded-md bg-amber-400 px-3 py-1 text-xs font-semibold text-emerald-950 disabled:opacity-40"
-                >
-                  Lay down
-                </button>
-                <button onClick={resetMeld} className="rounded-md border border-white/20 px-3 py-1 text-xs text-white/70 hover:bg-white/5">
-                  Cancel
-                </button>
-              </>
-            )}
-          </div>
+          {canLayDown && (
+            <button
+              onClick={handleLayDown}
+              disabled={pending}
+              className="rounded-md bg-amber-400 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-950 shadow-[0_0_16px_rgba(251,191,36,0.6)] hover:bg-amber-300 disabled:opacity-40"
+            >
+              Lay down · go out
+            </button>
+          )}
         </div>
 
-        {mode === "meld" && (
-          <div className="mb-3 rounded-md border border-dashed border-amber-300/40 bg-black/30 p-3 backdrop-blur">
-            <p className="text-xs text-white/70">
-              Tap cards to add them to the current meld, then "Add meld". Repeat until only one card remains (the discard). Naturals must strictly outnumber wilds.
-            </p>
-            {stagedMelds.map((m, i) => (
-              <div key={i} className="mt-2 flex flex-wrap items-center gap-1">
-                <span className="text-xs text-amber-200/70">#{i + 1}</span>
-                {m.map((c) => <PlayingCard key={c} id={c} wildRank={wildRank} size="sm" />)}
+        <LayoutGroup>
+          {/* Melded groups */}
+          {arrangement.melds.length > 0 && (
+            <div className="mb-3 rounded-xl border border-amber-300/25 bg-emerald-900/40 p-3 backdrop-blur">
+              <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-amber-200/80">
+                <span>Melds</span>
+                <span className="rounded-full bg-amber-300/15 px-1.5 py-0.5 text-amber-200">
+                  {arrangement.melds.length}
+                </span>
               </div>
-            ))}
-            {currentMeld.length > 0 && (
-              <div className="mt-2 flex flex-wrap items-center gap-1">
-                <span className="text-xs text-amber-300">current</span>
-                {currentMeld.map((c) => <PlayingCard key={c} id={c} wildRank={wildRank} size="sm" />)}
+              <div className="flex flex-wrap items-center gap-6">
+                <AnimatePresence initial={false}>
+                  {arrangement.melds.map((meld, mi) => (
+                    <motion.div
+                      key={`meld-${meld.join(",")}`}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ type: "spring", stiffness: 240, damping: 22 }}
+                      className="relative flex items-end"
+                    >
+                      <span className="mr-2 text-[10px] font-semibold text-amber-200/60">
+                        #{mi + 1}
+                      </span>
+                      {meld.map((c, i) => (
+                        <motion.div
+                          key={c}
+                          layoutId={`card-${c}`}
+                          transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                          style={{ marginLeft: i === 0 ? 0 : -28, zIndex: i }}
+                        >
+                          <PlayingCard
+                            id={c}
+                            wildRank={wildRank}
+                            size="sm"
+                            onClick={() => handleCardClick(c)}
+                          />
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        <div className="flex min-h-[8rem] flex-wrap justify-center gap-2 rounded-xl border border-white/5 bg-black/20 p-3 backdrop-blur">
-          <AnimatePresence initial={false}>
-            {sorted.map((c, idx) => (
-              <motion.div
-                key={c}
-                layout
-                initial={{ y: -140, opacity: 0, rotate: -8 }}
-                animate={{ y: 0, opacity: 1, rotate: 0 }}
-                exit={{ y: 120, opacity: 0, rotate: 6, scale: 0.85 }}
-                transition={{ type: "spring", stiffness: 260, damping: 22, delay: Math.min(idx * 0.008, 0.15) }}
-              >
-                <PlayingCard
-                  id={c}
-                  wildRank={wildRank}
-                  selected={mode === "meld" && (currentMeld.includes(c) || stagedMelds.some((m) => m.includes(c)))}
-                  faded={mode === "meld" && usedInMelds.has(c) && !currentMeld.includes(c)}
-                  onClick={() => handleCardClick(c)}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {sorted.length === 0 && <p className="self-center text-sm text-white/60">No cards in hand.</p>}
-        </div>
+          {/* Unmelded */}
+          <div className="rounded-xl border border-white/10 bg-black/25 p-3 backdrop-blur">
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/60">
+              Unmelded {unmelded.length > 0 && <span className="text-amber-200">· {unmeldedScore} pts</span>}
+            </div>
+            <div className="flex min-h-[7rem] flex-wrap justify-center gap-2">
+              <AnimatePresence initial={false}>
+                {unmelded.map((c) => (
+                  <motion.div
+                    key={c}
+                    layoutId={`card-${c}`}
+                    initial={{ y: -140, opacity: 0, rotate: -8 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    exit={{ y: 120, opacity: 0, rotate: 6, scale: 0.85 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                  >
+                    <PlayingCard
+                      id={c}
+                      wildRank={wildRank}
+                      onClick={() => handleCardClick(c)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {sorted.length === 0 && <p className="self-center text-sm text-white/60">No cards in hand.</p>}
+              {sorted.length > 0 && unmelded.length === 0 && (
+                <p className="self-center text-sm text-amber-200/80">All cards melded — lay down to go out.</p>
+              )}
+            </div>
+          </div>
+        </LayoutGroup>
       </section>
       </div>
 
@@ -506,7 +469,7 @@ function TableArea({
             <CardBack size="lg" count={match.stockCount} />
           </div>
           <button
-            disabled={!isMyTurn || match.hasDrawn || pending || Boolean(goneOut) || roundComplete}
+            disabled={!isMyTurn || match.hasDrawn || pending || roundComplete}
             onClick={() => onAction({ type: "draw-stock" })}
             className="rounded-full bg-amber-400 px-4 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
           >
@@ -533,7 +496,7 @@ function TableArea({
             </AnimatePresence>
           </div>
           <button
-            disabled={!isMyTurn || match.hasDrawn || !discardTop || pending || Boolean(goneOut) || roundComplete}
+            disabled={!isMyTurn || match.hasDrawn || !discardTop || pending || roundComplete}
             onClick={() => onAction({ type: "draw-discard" })}
             className="rounded-full bg-amber-400/90 px-4 py-1 text-xs font-semibold text-emerald-950 shadow hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/50"
           >
