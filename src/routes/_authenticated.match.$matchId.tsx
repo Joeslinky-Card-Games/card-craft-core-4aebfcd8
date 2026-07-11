@@ -1076,10 +1076,12 @@ function ChatPanel({
 function SortableCard({
   id,
   wildRank,
+  index,
   onClick,
 }: {
   id: string;
   wildRank: string | null;
+  index?: number;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -1091,8 +1093,10 @@ function SortableCard({
     cursor: isDragging ? "grabbing" : "grab",
     touchAction: "none",
   };
+  // Overlap unmelded cards on mobile so more fit on screen; spread out on sm+.
+  const overlap = index && index > 0 ? "-ml-6 sm:ml-0" : "";
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} className={overlap} {...attributes} {...listeners}>
       <PlayingCard id={id} wildRank={wildRank} onClick={onClick} />
     </div>
   );
