@@ -147,7 +147,6 @@ export function autoArrange(
   // (i.e. reorganize even if that means smaller melds, when lower-scoring cards
   // get melded instead).
   const cardPts = hand.map((c) => cardPoints(c));
-  const totalPts = cardPts.reduce((a, b) => a + b, 0);
   // Precompute point value of each candidate's melded cards.
   const cands = candidates.map((c) => ({
     ...c,
@@ -179,7 +178,6 @@ export function autoArrange(
     }
   };
   dfs(0, 0, 0, []);
-  void totalPts;
   return { melds: bestPicked.map((m) => m.cards), discard: null, complete: false };
 }
 
@@ -192,12 +190,6 @@ function sumBitsPts(mask: number, pts: number[]): number {
     i++;
   }
   return s;
-}
-
-function popcount(x: number): number {
-  let c = 0;
-  while (x) { x &= x - 1; c++; }
-  return c;
 }
 
 function cover(
