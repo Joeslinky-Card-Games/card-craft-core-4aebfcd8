@@ -213,6 +213,7 @@ export function autoArrange(
   complete: boolean;
   goOutMelds?: string[][];
   goOutDiscard?: string;
+  goOutOptions?: { discard: string; melds: string[][] }[];
 } {
   const n = hand.length;
   if (n === 0) return { melds: [], discard: null, complete: false };
@@ -237,13 +238,17 @@ export function autoArrange(
   const discardOrder = [...indices].sort((a, b) => cardPoints(hand[b]) - cardPoints(hand[a]));
   let goOutMelds: string[][] | undefined;
   let goOutDiscard: string | undefined;
+  const goOutOptions: { discard: string; melds: string[][] }[] = [];
   for (const d of discardOrder) {
     const target = ((1 << n) - 1) ^ (1 << d);
     const covered = cover(target, candidates);
     if (covered) {
-      goOutMelds = covered.map((m) => m.cards);
-      goOutDiscard = hand[d];
-      break;
+      const meldsForD = covered.map((m) => m.cards);
+      goOutOptions.push({ discard: hand[d], melds: meldsForD });
+      if (!goOutMelds) {
+        goOutMelds = meldsForD;
+        goOutDiscard = hand[d];
+      }
     }
   }
 
@@ -289,6 +294,7 @@ export function autoArrange(
     complete: Boolean(goOutMelds),
     goOutMelds,
     goOutDiscard,
+    goOutOptions: goOutOptions.length > 0 ? goOutOptions : undefined,
   };
 }
 
