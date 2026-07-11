@@ -66,6 +66,7 @@ export type Match = {
   createdAt: string;
   createdBy: string;
   players: string[];
+  usernames?: Record<string, string>;
   maxPlayers: number;
   minPlayers?: number;
   version?: number;
