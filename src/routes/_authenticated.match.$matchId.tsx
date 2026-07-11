@@ -365,10 +365,20 @@ function GameView({
     setRulesOpen(false);
   };
 
-  // Seat positions are based on the stable player list (join order), NOT the
-  // per-round `_order` which rotates with the dealer. Keeping seats fixed
-  // means play always visually passes the same direction around the table.
-  const opponents = match.players.filter((p) => p !== userId);
+  // Seat opponents in play order starting from the player immediately after
+  // the viewer. The seat layout sweeps from lower-left → top → lower-right,
+  // so opponents[0] sits to the viewer's left and play proceeds clockwise
+  // around the table on every player's screen.
+  const opponents = useMemo(() => {
+    const seq = match._order && match._order.length > 0 ? match._order : match.players;
+    const selfIdx = seq.indexOf(userId);
+    if (selfIdx === -1) return seq.filter((p) => p !== userId);
+    const rotated: string[] = [];
+    for (let i = 1; i < seq.length; i++) {
+      rotated.push(seq[(selfIdx + i) % seq.length]);
+    }
+    return rotated;
+  }, [match._order, match.players, userId]);
   const goneOut = match.goneOutBy;
   const roundComplete = match.status === "round-complete";
   const matchComplete = match.status === "complete";
