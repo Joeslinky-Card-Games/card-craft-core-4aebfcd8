@@ -632,6 +632,14 @@ function GameView({
         onOpenChange={setRulesOpen}
         onDontShowAgain={dontShowAgain}
       />
+      {goneOutAnnouncement && !roundComplete && !matchComplete && (
+        <WentOutAnnouncement
+          name={displayName(match, goneOutAnnouncement, userId)}
+          isSelf={goneOutAnnouncement === userId}
+          remaining={match.remainingFinalTurns ?? 0}
+          onClose={() => setGoneOutAnnouncement(null)}
+        />
+      )}
       {pickingGoOutDiscard && (
         <GoOutOptionsPicker
           options={goOutOptions}
