@@ -190,6 +190,38 @@ Resources:
             Method: POST
             Path: /matches/{matchId}/action
 
+  StartMatchFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/start.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches/{matchId}/start
+
+  NextRoundFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/next-round.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches/{matchId}/next-round
+
   # ---------- Profile ----------
   GetProfileFn:
     Type: AWS::Serverless::Function
