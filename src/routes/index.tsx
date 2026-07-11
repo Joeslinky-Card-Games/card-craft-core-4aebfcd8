@@ -15,7 +15,7 @@ function Index() {
           Online card games
         </span>
         <h1 className="mt-6 text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-          The ArcadiumX, <span className="text-primary">reimagined</span>.
+          ArcadiumX, <span className="text-primary">reimagined</span>.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
           Play Hearts, Spades, Poker and more with friends from anywhere. Create an
