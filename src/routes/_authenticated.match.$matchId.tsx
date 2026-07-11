@@ -460,6 +460,7 @@ function GameView({
           pending={pending}
           goneOut={goneOut}
           roundComplete={roundComplete}
+          matchComplete={matchComplete}
           discardTop={discardTop}
           wildRank={wildRank}
           onAction={onAction}
