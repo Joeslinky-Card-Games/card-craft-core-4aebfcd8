@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useUser } from "@clerk/tanstack-react-start";
 import { useApi, type GameAction, type MatchView } from "@/lib/api";
 import { PlayingCard, CardBack, EmptyCardSlot } from "@/components/game/PlayingCard";
 import { sortHand, cardPoints } from "@/lib/game/cards";
 import { autoArrange } from "@/lib/game/melds";
+import { RulesDialog } from "@/components/game/RulesDialog";
 
 export const Route = createFileRoute("/_authenticated/match/$matchId")({
   head: () => ({
@@ -199,6 +200,19 @@ function GameView({
   const sorted = useMemo(() => sortHand(myHand, match.wildRank), [myHand, match.wildRank]);
   const wildRank = match.wildRank ?? null;
 
+  // Rules dialog: auto-open on first game entry, respect "don't show again".
+  const RULES_KEY = "cw:rules-dismissed";
+  const [rulesOpen, setRulesOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const dismissed = window.localStorage.getItem(RULES_KEY) === "1";
+    if (!dismissed) setRulesOpen(true);
+  }, []);
+  const dontShowAgain = () => {
+    try { window.localStorage.setItem(RULES_KEY, "1"); } catch { /* ignore */ }
+    setRulesOpen(false);
+  };
+
   const opponents = order.filter((p) => p !== userId);
   const goneOut = match.goneOutBy;
   const roundComplete = match.status === "round-complete";
@@ -255,6 +269,14 @@ function GameView({
             <span>Wild <b className="text-amber-300">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b> + ★</span>
             <span className="text-white/30">·</span>
             <span>Score <b className="text-amber-200">{match.scores?.[userId] ?? 0}</b></span>
+            <span className="text-white/30">·</span>
+            <button
+              type="button"
+              onClick={() => setRulesOpen(true)}
+              className="rounded-full px-1 text-amber-200 hover:text-amber-100"
+            >
+              Rules
+            </button>
           </div>
         </div>
 
