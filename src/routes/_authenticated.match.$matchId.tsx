@@ -405,15 +405,15 @@ function GameView({
       />
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-30 mix-blend-overlay [background:repeating-linear-gradient(45deg,transparent_0_3px,rgba(255,255,255,0.04)_3px_6px)]" />
 
-      <div className="mx-auto max-w-6xl px-4 py-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+      <div className="mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
           <Link to="/lobby" className="text-white/70 underline hover:text-white">← Lobby</Link>
-          <div className="flex items-center gap-4 rounded-full border border-amber-300/30 bg-black/25 px-4 py-1.5 text-white/80 shadow backdrop-blur">
-            <span>Round <b className="text-amber-200">{match.round}/13</b></span>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-amber-300/30 bg-black/25 px-3 py-1.5 text-white/80 shadow backdrop-blur sm:gap-x-4 sm:rounded-full sm:px-4">
+            <span>R <b className="text-amber-200">{match.round}/13</b></span>
             <span className="text-white/30">·</span>
             <span>Hand <b className="text-amber-200">{match.handSize}</b></span>
             <span className="text-white/30">·</span>
-            <span>Wild <b className="text-amber-300">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b> + ★</span>
+            <span>Wild <b className="text-amber-300">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b>+★</span>
             <span className="text-white/30">·</span>
             <span>Score <b className="text-amber-200">{match.scores?.[userId] ?? 0}</b></span>
             <span className="text-white/30">·</span>
@@ -504,8 +504,8 @@ function GameView({
 
         <LayoutGroup>
           {/* Single hand row: melds (condensed/overlapping) + unmelded cards */}
-          <div className="rounded-xl border border-white/10 bg-black/25 p-3 backdrop-blur">
-            <div className="flex min-h-[7rem] flex-wrap items-end justify-center gap-x-6 gap-y-3">
+          <div className="rounded-xl border border-white/10 bg-black/25 p-2 backdrop-blur sm:p-3">
+            <div className="flex min-h-[6rem] flex-wrap items-end justify-center gap-x-2 gap-y-3 sm:min-h-[7rem] sm:gap-x-6">
               <AnimatePresence initial={false}>
                 {arrangement.melds.map((rawMeld, mi) => {
                   const meld = orderMeldForDisplay(rawMeld, wildRank);
@@ -517,7 +517,7 @@ function GameView({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                    className="relative flex items-end rounded-lg bg-emerald-900/50 px-2 py-1 ring-1 ring-amber-300/40"
+                    className="relative flex items-end rounded-lg bg-emerald-900/50 px-1.5 py-1 ring-1 ring-amber-300/40 sm:px-2"
                     title={`Meld #${mi + 1}`}
                   >
                     {meld.map((c, i) => (
@@ -525,7 +525,8 @@ function GameView({
                         key={c}
                         layoutId={`card-${c}`}
                         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                        style={{ marginLeft: i === 0 ? 0 : -34, zIndex: i }}
+                        className={i === 0 ? "" : "-ml-8 sm:-ml-[34px]"}
+                        style={{ zIndex: i }}
                       >
                         <PlayingCard
                           id={c}
@@ -543,11 +544,12 @@ function GameView({
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext items={orderedUnmelded} strategy={horizontalListSortingStrategy}>
-                    {orderedUnmelded.map((c) => (
+                    {orderedUnmelded.map((c, i) => (
                       <SortableCard
                         key={c}
                         id={c}
                         wildRank={wildRank}
+                        index={i}
                         onClick={() => handleCardClick(c)}
                       />
                     ))}
@@ -652,7 +654,7 @@ function TableArea({
   });
 
   return (
-    <div className="relative mx-auto aspect-[16/9] w-full max-w-4xl">
+    <div className="relative mx-auto aspect-[4/3] w-full max-w-4xl sm:aspect-[16/9]">
       {/* Oval table */}
       <div
         className="absolute inset-4 rounded-[50%] border-[10px] border-amber-950/80 shadow-[inset_0_0_60px_rgba(0,0,0,0.55),0_20px_50px_rgba(0,0,0,0.5)]"
@@ -690,7 +692,7 @@ function TableArea({
       })}
 
       {/* Center piles */}
-      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-6">
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 sm:gap-6">
         {(() => {
           const canDrawStock = isMyTurn && !match.hasDrawn && !pending && !roundComplete;
           const canDrawDiscard = canDrawStock && Boolean(discardTop);
@@ -717,7 +719,7 @@ function TableArea({
                 whileHover={canDrawDiscard ? { y: -8, scale: 1.04 } : undefined}
                 whileTap={canDrawDiscard ? { scale: 0.97 } : undefined}
                 transition={{ type: "spring", stiffness: 320, damping: 22 }}
-                className={`relative h-32 w-24 rounded-lg ${canDrawDiscard ? "cursor-pointer shadow-[0_0_18px_rgba(251,191,36,0.35)] ring-2 ring-amber-300/70" : "cursor-default"} disabled:opacity-80`}
+                className={`relative h-24 w-16 rounded-lg sm:h-32 sm:w-24 ${canDrawDiscard ? "cursor-pointer shadow-[0_0_18px_rgba(251,191,36,0.35)] ring-2 ring-amber-300/70" : "cursor-default"} disabled:opacity-80`}
               >
                 <AnimatePresence mode="popLayout">
                   {discardTop ? (
@@ -1002,7 +1004,7 @@ function ChatPanel({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
+    <div className="fixed bottom-3 right-3 z-40 flex flex-col items-end sm:bottom-4 sm:right-4">
       {open && (
         <div className="mb-2 flex w-80 max-w-[calc(100vw-2rem)] flex-col rounded-2xl border border-amber-300/30 bg-emerald-950/95 shadow-2xl backdrop-blur">
           <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
@@ -1058,7 +1060,7 @@ function ChatPanel({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex items-center gap-2 rounded-full border border-amber-300/40 bg-black/60 px-4 py-2 text-sm font-semibold text-amber-100 shadow-lg backdrop-blur hover:bg-black/80"
+        className="relative flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-black/60 px-3 py-1.5 text-xs font-semibold text-amber-100 shadow-lg backdrop-blur hover:bg-black/80 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
       >
         <span>{open ? "Hide chat" : "Chat"}</span>
         {!open && unread > 0 && (
@@ -1074,10 +1076,12 @@ function ChatPanel({
 function SortableCard({
   id,
   wildRank,
+  index,
   onClick,
 }: {
   id: string;
   wildRank: string | null;
+  index?: number;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -1089,8 +1093,10 @@ function SortableCard({
     cursor: isDragging ? "grabbing" : "grab",
     touchAction: "none",
   };
+  // Overlap unmelded cards on mobile so more fit on screen; spread out on sm+.
+  const overlap = index && index > 0 ? "-ml-6 sm:ml-0" : "";
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} className={overlap} {...attributes} {...listeners}>
       <PlayingCard id={id} wildRank={wildRank} onClick={onClick} />
     </div>
   );

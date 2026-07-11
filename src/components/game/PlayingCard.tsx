@@ -4,20 +4,20 @@ type Size = "sm" | "md" | "lg";
 
 const sizeClasses: Record<Size, string> = {
   sm: "h-14 w-10 text-[10px]",
-  md: "h-24 w-16 text-base",
-  lg: "h-32 w-24 text-lg",
+  md: "h-20 w-14 text-sm sm:h-24 sm:w-16 sm:text-base",
+  lg: "h-24 w-16 text-base sm:h-32 sm:w-24 sm:text-lg",
 };
 
 const cornerSize: Record<Size, string> = {
   sm: "text-[10px]",
-  md: "text-base",
-  lg: "text-lg",
+  md: "text-sm sm:text-base",
+  lg: "text-base sm:text-lg",
 };
 
 const pipSize: Record<Size, string> = {
   sm: "text-xl",
-  md: "text-4xl",
-  lg: "text-6xl",
+  md: "text-3xl sm:text-4xl",
+  lg: "text-4xl sm:text-6xl",
 };
 
 export function PlayingCard({
