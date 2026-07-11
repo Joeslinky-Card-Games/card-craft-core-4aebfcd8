@@ -765,7 +765,7 @@ function TableArea({
               wentOut={Boolean(match.laidMelds?.[p])}
               laidMelds={match.laidMelds?.[p]}
               hand={match.hands?.[p]}
-              roundComplete={roundComplete || matchComplete || viewerDone}
+              handVisible={roundComplete || matchComplete || viewerDone || finalTurnDone.has(p)}
               wildRank={wildRank}
             />
           </div>
