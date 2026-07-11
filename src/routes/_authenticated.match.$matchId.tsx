@@ -481,6 +481,15 @@ function GameView({
               Lay down · go out
             </button>
           )}
+          {hasCustomSort && (
+            <button
+              onClick={() => setManualOrder([])}
+              className="rounded-md border border-white/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/70 hover:bg-white/10 hover:text-white"
+              title="Return to auto-sorted order"
+            >
+              Reset sort
+            </button>
+          )}
         </div>
 
         <LayoutGroup>
