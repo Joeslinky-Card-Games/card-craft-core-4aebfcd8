@@ -965,3 +965,113 @@ function ChatPanel({
     </div>
   );
 }
+
+function GoOutOptionsPicker({
+  options,
+  wildRank,
+  pending,
+  onCancel,
+  onPick,
+}: {
+  options: { discard: string; melds: string[][] }[];
+  wildRank: string | null;
+  pending: boolean;
+  onCancel: () => void;
+  onPick: (opt: { discard: string; melds: string[][] }) => void;
+}) {
+  // Deduplicate by discard card in case the solver returned equivalents.
+  const seen = new Set<string>();
+  const unique = options.filter((o) => {
+    if (seen.has(o.discard)) return false;
+    seen.add(o.discard);
+    return true;
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0, y: 12 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        className="w-full max-w-3xl rounded-2xl border border-amber-300/30 bg-gradient-to-br from-emerald-950 to-emerald-900 p-6 text-white shadow-2xl"
+      >
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-amber-100">Pick how to go out</h2>
+            <p className="mt-1 text-sm text-white/70">
+              You have multiple valid lay-downs. Each option shows the melds you'll keep and the card that will be discarded.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="shrink-0 rounded-full px-2 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
+            aria-label="Cancel"
+          >
+            ×
+          </button>
+        </div>
+
+        <ul className="max-h-[65vh] space-y-3 overflow-y-auto pr-1">
+          {unique.map((opt, idx) => (
+            <li key={opt.discard}>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => onPick(opt)}
+                className="group flex w-full flex-col gap-3 rounded-xl border border-white/10 bg-black/30 p-3 text-left transition hover:border-amber-300/60 hover:bg-black/50 disabled:opacity-50 sm:flex-row sm:items-center"
+              >
+                <span className="shrink-0 rounded-md bg-white/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/60 group-hover:text-white/80">
+                  Option {idx + 1}
+                </span>
+
+                {/* Kept melds — emerald frame */}
+                <div className="flex flex-1 flex-wrap items-end gap-x-4 gap-y-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300">Keep</span>
+                  {opt.melds.map((rawMeld, mi) => {
+                    const meld = orderMeldForDisplay(rawMeld, wildRank);
+                    return (
+                      <div
+                        key={mi}
+                        className="flex items-end rounded-lg bg-emerald-900/60 px-1.5 py-1 ring-1 ring-emerald-400/40"
+                      >
+                        {meld.map((c, i) => (
+                          <div
+                            key={c}
+                            style={{ marginLeft: i === 0 ? 0 : -28, zIndex: i }}
+                          >
+                            <PlayingCard id={c} wildRank={wildRank} size="sm" />
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Discard — rose frame, visually separated */}
+                <div className="flex shrink-0 items-end gap-2 border-t border-white/10 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-rose-300">Discard</span>
+                    <div className="rounded-lg bg-rose-950/50 p-1 ring-2 ring-rose-400/70">
+                      <PlayingCard id={opt.discard} wildRank={wildRank} size="sm" />
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-5 flex justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-md border border-white/20 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10"
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
