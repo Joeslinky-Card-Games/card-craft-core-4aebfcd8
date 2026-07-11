@@ -436,15 +436,7 @@ function GameView({
               disabled={pending}
               className="rounded-md bg-amber-400 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-950 shadow-[0_0_16px_rgba(251,191,36,0.6)] hover:bg-amber-300 disabled:opacity-40"
             >
-              {pickingGoOutDiscard ? "Choose card to discard…" : "Lay down · go out"}
-            </button>
-          )}
-          {pickingGoOutDiscard && (
-            <button
-              onClick={() => setPickingGoOutDiscard(false)}
-              className="rounded-md border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
-            >
-              Cancel
+              Lay down · go out
             </button>
           )}
         </div>
