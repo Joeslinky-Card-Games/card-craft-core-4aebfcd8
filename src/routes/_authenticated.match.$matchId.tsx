@@ -27,6 +27,11 @@ function displayName(match: MatchView, userId: string, self: string): string {
   return match.usernames?.[userId] ?? shortId(userId);
 }
 
+function avatarOf(match: MatchView, userId: string, selfId: string, selfImage: string | null): string | null {
+  if (userId === selfId && selfImage) return selfImage;
+  return match.avatars?.[userId] ?? null;
+}
+
 function initialsOf(name: string): string {
   const clean = name.replace(/[^\p{L}\p{N} ]/gu, "").trim();
   if (!clean) return "?";
@@ -45,6 +50,7 @@ function MatchPage() {
   const { matchId } = Route.useParams();
   const { user } = useUser();
   const userId = user?.id ?? "";
+  const selfImage = user?.imageUrl ?? null;
   const api = useApi();
   const qc = useQueryClient();
 
@@ -80,6 +86,7 @@ function MatchPage() {
       <LobbyView
         match={match}
         userId={userId}
+        selfImage={selfImage}
         onStart={() => startMut.mutate()}
         starting={startMut.isPending}
         startError={startMut.error instanceof Error ? startMut.error.message : null}
@@ -91,6 +98,7 @@ function MatchPage() {
     <GameView
       match={match}
       userId={userId}
+      selfImage={selfImage}
       onAction={(a) => actionMut.mutate(a)}
       onNextRound={() => nextRoundMut.mutate()}
       pending={actionMut.isPending || nextRoundMut.isPending}
