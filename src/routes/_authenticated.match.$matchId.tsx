@@ -1024,7 +1024,7 @@ function ChatPanel({
               ×
             </button>
           </div>
-          <div ref={scrollRef} className="max-h-72 min-h-[8rem] overflow-y-auto px-3 py-2 text-sm">
+          <div ref={scrollRef} className="max-h-[min(18rem,50dvh)] min-h-[6rem] overflow-y-auto px-3 py-2 text-sm">
             {messages.length === 0 ? (
               <p className="py-4 text-center text-xs text-white/40">No messages yet. Say hi!</p>
             ) : (
