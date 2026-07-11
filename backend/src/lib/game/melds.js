@@ -1,39 +1,55 @@
 const { parseCard, RANK_ORDER } = require("./cards");
 
-function classify(cards, wildRank) {
+// A card that matches the wild rank may be used as EITHER a wild or a natural.
+// Jokers are always wild. We enumerate every choice of which wild-rank cards
+// count as naturals, and accept a meld if any choice is valid.
+function forEachClassification(cards, wildRank, cb) {
   const parsed = cards.map(parseCard);
-  const wilds = [];
-  const naturals = [];
-  for (const c of parsed) {
-    if (c.joker || c.rank === wildRank) wilds.push(c);
-    else naturals.push(c);
+  const flex = []; // indices of wild-rank (non-joker) cards
+  for (let i = 0; i < parsed.length; i++) {
+    const c = parsed[i];
+    if (!c.joker && c.rank === wildRank) flex.push(i);
   }
-  return { parsed, wilds, naturals };
+  const n = flex.length;
+  for (let mask = 0; mask < (1 << n); mask++) {
+    const wilds = [];
+    const naturals = [];
+    for (let i = 0; i < parsed.length; i++) {
+      const c = parsed[i];
+      if (c.joker) { wilds.push(c); continue; }
+      const flexIdx = flex.indexOf(i);
+      if (flexIdx >= 0) {
+        const asNatural = ((mask >> flexIdx) & 1) === 1;
+        (asNatural ? naturals : wilds).push(c);
+      } else {
+        naturals.push(c);
+      }
+    }
+    if (cb(wilds, naturals)) return true;
+  }
+  return false;
 }
 
-function validateSet(cards, wildRank) {
-  if (!Array.isArray(cards) || cards.length < 3 || cards.length > 4) return false;
-  if (new Set(cards).size !== cards.length) return false;
-  const { wilds, naturals } = classify(cards, wildRank);
+function setShape(wilds, naturals) {
   if (naturals.length <= wilds.length) return false;
   const ranks = new Set(naturals.map((c) => c.rank));
   return ranks.size === 1;
 }
 
-function validateRun(cards, wildRank) {
-  if (!Array.isArray(cards) || cards.length < 3) return false;
-  if (new Set(cards).size !== cards.length) return false;
-  const { wilds, naturals } = classify(cards, wildRank);
+function runShape(wilds, naturals, L) {
   if (naturals.length <= wilds.length) return false;
   const suits = new Set(naturals.map((c) => c.suit));
   if (suits.size !== 1) return false;
 
-  const L = cards.length;
   const fixed = [];
   let aceCount = 0;
+  const seen = new Set();
   for (const c of naturals) {
-    if (c.rank === "A") aceCount++;
-    else fixed.push(RANK_ORDER[c.rank]);
+    if (c.rank === "A") { aceCount++; continue; }
+    const p = RANK_ORDER[c.rank];
+    if (seen.has(p)) return false; // two naturals on same slot impossible
+    seen.add(p);
+    fixed.push(p);
   }
 
   for (let start = 1; start + L - 1 <= 14; start++) {
@@ -54,6 +70,19 @@ function validateRun(cards, wildRank) {
     if (remaining === wilds.length) return true;
   }
   return false;
+}
+
+function validateSet(cards, wildRank) {
+  if (!Array.isArray(cards) || cards.length < 3 || cards.length > 4) return false;
+  if (new Set(cards).size !== cards.length) return false;
+  return forEachClassification(cards, wildRank, (w, n) => setShape(w, n));
+}
+
+function validateRun(cards, wildRank) {
+  if (!Array.isArray(cards) || cards.length < 3) return false;
+  if (new Set(cards).size !== cards.length) return false;
+  const L = cards.length;
+  return forEachClassification(cards, wildRank, (w, n) => runShape(w, n, L));
 }
 
 function validateMeld(cards, wildRank) {

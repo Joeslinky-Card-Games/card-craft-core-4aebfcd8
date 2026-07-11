@@ -19,9 +19,13 @@ test("set with too many wilds rejected", () => {
   assert.equal(validateSet(["7H1", "7S1", "JK1", "JK2"], "3"), false);
 });
 
-test("set of wild rank rejected (all wilds)", () => {
-  // wildRank = 7 means 7s are wild, so no valid set of 7s
-  assert.equal(validateSet(["7H1", "7S1", "7D1"], "7"), false);
+test("set of wild-rank naturals allowed (wild-rank card as natural)", () => {
+  // 3 sevens, wildRank=7. Treated as naturals: valid set of 7s.
+  assert.equal(validateSet(["7H1", "7S1", "7D1"], "7"), true);
+});
+
+test("3-3-Joker on round 1 valid (3s as naturals, joker wild)", () => {
+  assert.equal(validateSet(["3H1", "3S1", "JK1"], "3"), true);
 });
 
 test("valid run A-2-3", () => {
@@ -49,11 +53,13 @@ test("run wrong suit rejected", () => {
   assert.equal(validateRun(["5H1", "6S1", "7H1"], "K"), false);
 });
 
-test("run with wild-rank card as natural rejected", () => {
-  // wildRank = 6 makes 6H a wild, but its position 6 must fit; treat as wild
-  assert.equal(validateRun(["5H1", "6H1", "7H1"], "6"), true); // 6H is wild filling slot 6
-  // 5H, 6H (wild), 6H2 (wild) — 2 wilds vs 1 natural rejected
-  assert.equal(validateRun(["5H1", "6H1", "6H2"], "6"), false);
+test("run: wild-rank card may be used as natural or wild", () => {
+  // 5H-6H-7H with wildRank=6: valid either way (6H as natural at slot 6, or as wild).
+  assert.equal(validateRun(["5H1", "6H1", "7H1"], "6"), true);
+  // 5H-6H1-6H2, wildRank=6: 6H1 as natural at slot 6, 6H2 as wild at slot 7 → valid.
+  assert.equal(validateRun(["5H1", "6H1", "6H2"], "6"), true);
+  // Only wilds (both jokers + one wild-rank card as wild) still rejected when naturals not majority.
+  assert.equal(validateRun(["6H1", "JK1", "JK2"], "6"), false);
 });
 
 test("going out requires exact hand coverage", () => {
