@@ -299,59 +299,37 @@ function GameView({
         </div>
 
         <LayoutGroup>
-          {/* Melded groups */}
-          {arrangement.melds.length > 0 && (
-            <div className="mb-3 rounded-xl border border-amber-300/25 bg-emerald-900/40 p-3 backdrop-blur">
-              <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-amber-200/80">
-                <span>Melds</span>
-                <span className="rounded-full bg-amber-300/15 px-1.5 py-0.5 text-amber-200">
-                  {arrangement.melds.length}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-6">
-                <AnimatePresence initial={false}>
-                  {arrangement.melds.map((meld, mi) => (
-                    <motion.div
-                      key={`meld-${meld.join(",")}`}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                      className="relative flex items-end"
-                    >
-                      <span className="mr-2 text-[10px] font-semibold text-amber-200/60">
-                        #{mi + 1}
-                      </span>
-                      {meld.map((c, i) => (
-                        <motion.div
-                          key={c}
-                          layoutId={`card-${c}`}
-                          transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                          style={{ marginLeft: i === 0 ? 0 : -28, zIndex: i }}
-                        >
-                          <PlayingCard
-                            id={c}
-                            wildRank={wildRank}
-                            size="sm"
-                            onClick={() => handleCardClick(c)}
-                          />
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
-
-          {/* Unmelded */}
+          {/* Single hand row: melds (condensed/overlapping) + unmelded cards */}
           <div className="rounded-xl border border-white/10 bg-black/25 p-3 backdrop-blur">
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/60">
-              Unmelded {unmelded.length > 0 && <span className="text-amber-200">· {unmeldedScore} pts</span>}
-            </div>
-            <div className="flex min-h-[7rem] flex-wrap justify-center gap-2">
+            <div className="flex min-h-[7rem] flex-wrap items-end justify-center gap-x-6 gap-y-3">
               <AnimatePresence initial={false}>
+                {arrangement.melds.map((meld, mi) => (
+                  <motion.div
+                    key={`meld-${meld.join(",")}`}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 240, damping: 22 }}
+                    className="relative flex items-end rounded-lg bg-emerald-900/50 px-2 py-1 ring-1 ring-amber-300/40"
+                    title={`Meld #${mi + 1}`}
+                  >
+                    {meld.map((c, i) => (
+                      <motion.div
+                        key={c}
+                        layoutId={`card-${c}`}
+                        transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                        style={{ marginLeft: i === 0 ? 0 : -34, zIndex: i }}
+                      >
+                        <PlayingCard
+                          id={c}
+                          wildRank={wildRank}
+                          onClick={() => handleCardClick(c)}
+                        />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                ))}
                 {unmelded.map((c) => (
                   <motion.div
                     key={c}
@@ -370,7 +348,7 @@ function GameView({
                 ))}
               </AnimatePresence>
               {sorted.length === 0 && <p className="self-center text-sm text-white/60">No cards in hand.</p>}
-              {sorted.length > 0 && unmelded.length === 0 && (
+              {sorted.length > 0 && unmelded.length === 0 && arrangement.melds.length > 0 && (
                 <p className="self-center text-sm text-amber-200/80">All cards melded — lay down to go out.</p>
               )}
             </div>
