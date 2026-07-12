@@ -3,7 +3,6 @@ const { ddb, tables } = require("../../lib/dynamo");
 const { ok, badRequest, notFound, forbidden, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { startMatch, startRound } = require("../../lib/game/engine");
-const { runAITurns } = require("../../lib/game/ai-runner");
 const { redactForUser } = require("../../lib/game/view");
 const { withRefreshedTtl } = require("../../lib/matches");
 
@@ -27,8 +26,6 @@ exports.handler = withAuth(async (event, { userId }) => {
       ...dealt,
       version: expectedVersion + 1,
     };
-    // If any bots are seated before the host in the deal order, let them play.
-    runAITurns(next);
     next = withRefreshedTtl(next);
 
     try {

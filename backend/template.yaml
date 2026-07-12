@@ -290,6 +290,22 @@ Resources:
             Method: POST
             Path: /matches/{matchId}/action
 
+  MatchAiStepFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/ai-step.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches/{matchId}/ai-step
+
   StartMatchFn:
     Type: AWS::Serverless::Function
     Properties:

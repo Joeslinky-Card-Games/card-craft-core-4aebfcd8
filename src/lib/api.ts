@@ -75,6 +75,7 @@ export type Match = {
   minPlayers?: number;
   version?: number;
   visibility?: "public" | "private";
+  aiPlayers?: string[];
 };
 
 /** Per-user redacted match view returned by GET /matches/{id}, POST /start, /action, /next-round. */
