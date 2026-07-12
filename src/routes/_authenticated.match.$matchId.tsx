@@ -435,15 +435,6 @@ function GameView({
   const meldedIds = useMemo(() => new Set(arrangement.melds.flat()), [arrangement]);
   const unmelded = useMemo(() => sorted.filter((c) => !meldedIds.has(c)), [sorted, meldedIds]);
   const unmeldedScore = unmelded.reduce((s, c) => s + cardPoints(c), 0);
-  const totalHandCards = arrangement.melds.flat().length + orderedUnmelded.length;
-  const handGapClass =
-    totalHandCards > 18
-      ? "-space-x-4 sm:-space-x-3"
-      : totalHandCards > 14
-        ? "gap-x-0 sm:gap-x-1"
-        : totalHandCards > 10
-          ? "gap-x-1 sm:gap-x-3"
-          : "gap-x-2 sm:gap-x-6";
 
   // Manual drag-and-drop ordering of unmelded cards. The user's ordering wins
   // for any card they've touched; anything else falls back to the auto-sorted
