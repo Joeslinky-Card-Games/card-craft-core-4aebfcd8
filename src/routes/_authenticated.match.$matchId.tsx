@@ -521,12 +521,12 @@ function GameView({
 
   return (
     <main
-      className="relative min-h-[calc(100vh-4rem)] min-h-[calc(100dvh-4rem)] w-full overflow-x-hidden"
+      className="relative isolate min-h-[calc(100vh-4rem)] min-h-[calc(100dvh-4rem)] w-full overflow-x-hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       {/* Room: back wall */}
       <div
-        className="pointer-events-none absolute inset-0 -z-30"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
             "linear-gradient(180deg, #1a0f0a 0%, #2a1810 45%, #1e1108 62%, #1e1108 100%)",
@@ -534,7 +534,7 @@ function GameView({
       />
       {/* Room: wooden floor (lower portion) with perspective */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 -z-30 h-[38%]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[38%]"
         style={{
           background:
             "linear-gradient(180deg, #2a1a10 0%, #4a2d1a 25%, #3a2312 70%, #1f120a 100%)",
@@ -542,7 +542,7 @@ function GameView({
       />
       {/* Floor plank streaks */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 -z-30 h-[38%] opacity-40 mix-blend-overlay"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[38%] opacity-40 mix-blend-overlay"
         style={{
           background:
             "repeating-linear-gradient(90deg, transparent 0 60px, rgba(0,0,0,0.35) 60px 62px, transparent 62px 130px, rgba(255,220,180,0.05) 130px 132px)",
@@ -550,7 +550,7 @@ function GameView({
       />
       {/* Wall/floor seam shadow */}
       <div
-        className="pointer-events-none absolute inset-x-0 -z-30 h-16"
+        className="pointer-events-none absolute inset-x-0 z-0 h-16"
         style={{
           bottom: "38%",
           background:
@@ -559,7 +559,7 @@ function GameView({
       />
       {/* Overhead light cone spilling onto wall */}
       <div
-        className="pointer-events-none absolute inset-0 -z-20"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
             "radial-gradient(ellipse 70% 55% at 50% 42%, rgba(255,214,140,0.18) 0%, rgba(255,190,110,0.08) 35%, rgba(0,0,0,0) 70%)",
@@ -567,7 +567,7 @@ function GameView({
       />
       {/* Felt table oval */}
       <div
-        className="pointer-events-none absolute -z-20"
+        className="pointer-events-none absolute z-0"
         style={{
           left: "50%",
           top: "50%",
@@ -583,7 +583,7 @@ function GameView({
       />
       {/* Felt weave texture */}
       <div
-        className="pointer-events-none absolute -z-20 opacity-25 mix-blend-overlay"
+        className="pointer-events-none absolute z-0 opacity-25 mix-blend-overlay"
         style={{
           left: "50%",
           top: "50%",
@@ -597,7 +597,7 @@ function GameView({
       />
       {/* Warm spotlight hitting the felt from above */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
             "radial-gradient(ellipse 42% 38% at 50% 44%, rgba(255,230,170,0.32) 0%, rgba(255,210,140,0.14) 30%, rgba(255,190,110,0.04) 55%, rgba(0,0,0,0) 75%)",
@@ -605,14 +605,14 @@ function GameView({
       />
       {/* Vignette to sink the room edges */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
             "radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)",
         }}
       />
 
-      <div className="mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-4">
+      <div className="relative z-10 mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
           <Link to="/lobby" className="text-white/70 underline hover:text-white">← Lobby</Link>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-amber-300/30 bg-black/25 px-3 py-1.5 text-white/80 shadow backdrop-blur sm:gap-x-4 sm:rounded-full sm:px-4">
