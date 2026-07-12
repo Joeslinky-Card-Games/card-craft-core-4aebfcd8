@@ -1486,10 +1486,8 @@ function SortableCard({
     cursor: isDragging ? "grabbing" : "grab",
     touchAction: "none",
   };
-  // Overlap unmelded cards on mobile so more fit on screen; spread out on sm+.
-  const overlap = index && index > 0 ? "-ml-6 sm:ml-0" : "";
   return (
-    <div ref={setNodeRef} style={style} className={overlap} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <PlayingCard id={id} wildRank={wildRank} onClick={onClick} />
     </div>
   );
