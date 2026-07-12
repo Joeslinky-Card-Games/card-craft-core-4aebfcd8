@@ -534,7 +534,7 @@ function GameView({
       />
       {/* Room: wooden floor (lower portion) with perspective */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[38%]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[58%]"
         style={{
           background:
             "linear-gradient(180deg, #2a1a10 0%, #4a2d1a 25%, #3a2312 70%, #1f120a 100%)",
@@ -542,7 +542,7 @@ function GameView({
       />
       {/* Floor plank streaks */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[38%] opacity-40 mix-blend-overlay"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[58%] opacity-40 mix-blend-overlay"
         style={{
           background:
             "repeating-linear-gradient(90deg, transparent 0 60px, rgba(0,0,0,0.35) 60px 62px, transparent 62px 130px, rgba(255,220,180,0.05) 130px 132px)",
@@ -550,9 +550,9 @@ function GameView({
       />
       {/* Wall/floor seam shadow */}
       <div
-        className="pointer-events-none absolute inset-x-0 z-0 h-16"
+        className="pointer-events-none absolute inset-x-0 z-0 h-20"
         style={{
-          bottom: "38%",
+          bottom: "58%",
           background:
             "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 100%)",
         }}
