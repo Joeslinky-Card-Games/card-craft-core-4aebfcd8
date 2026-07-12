@@ -149,6 +149,49 @@ function MatchPage() {
   const chatError = chatMut.error instanceof Error ? chatMut.error.message : null;
   const sendChat = (text: string) => chatMut.mutate(text);
 
+  // Drive bot turns from the client with a small delay so each bot action
+  // (draw / discard / lay-down) feels paced instead of teleporting. One
+  // POST /ai-step per action; the effect re-runs on every state update and
+  // schedules the next tick if the current player is still an AI.
+  const currentMatch = query.data;
+  const aiSet = useMemo(
+    () => new Set(currentMatch?.aiPlayers ?? []),
+    [currentMatch?.aiPlayers],
+  );
+  const orderList = currentMatch?._order ?? currentMatch?.players ?? [];
+  const currentPlayerId =
+    orderList.length > 0 && typeof currentMatch?.turn === "number"
+      ? orderList[currentMatch.turn % orderList.length]
+      : null;
+  const botIsUp =
+    currentMatch?.status === "in-progress" &&
+    currentPlayerId != null &&
+    aiSet.has(currentPlayerId);
+  const tickKey = `${currentMatch?.version ?? 0}:${currentMatch?.hasDrawn ? 1 : 0}`;
+  useEffect(() => {
+    if (!botIsUp) return;
+    // Slightly longer "think" pause before the discard/lay-down decision,
+    // shorter for the draw. Add a bit of jitter so it doesn't feel mechanical.
+    const base = currentMatch?.hasDrawn ? 850 : 550;
+    const delay = base + Math.floor(Math.random() * 250);
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      api<MatchView>(`/matches/${matchId}/ai-step`, { method: "POST" })
+        .then((data) => {
+          if (!cancelled) qc.setQueryData(["match", matchId], data);
+        })
+        .catch(() => {
+          /* transient — the next tick or the 2s poll will recover */
+        });
+    }, delay);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [botIsUp, tickKey, matchId]);
+
   if (query.isLoading) return <Centered>Loading match…</Centered>;
   if (query.error) return <Centered>Failed to load match. <button className="underline" onClick={invalidate}>Retry</button></Centered>;
   const match = query.data!;
