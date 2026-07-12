@@ -2,7 +2,9 @@
 // API Gateway invoke URL (e.g. https://xxx.execute-api.us-east-1.amazonaws.com).
 import { useAuth } from "@clerk/tanstack-react-start";
 
-export const API_URL = import.meta.env.VITE_API_URL as string | undefined;
+export const API_URL =
+  (import.meta.env.VITE_API_URL as string | undefined) ||
+  "https://api.arcadiumx.app";
 
 export class ApiError extends Error {
   status: number;
