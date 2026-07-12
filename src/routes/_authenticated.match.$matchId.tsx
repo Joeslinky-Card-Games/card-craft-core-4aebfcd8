@@ -534,7 +534,7 @@ function GameView({
       />
       {/* Room: wooden floor (lower portion) with perspective */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[58%]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[38%]"
         style={{
           background:
             "linear-gradient(180deg, #2a1a10 0%, #4a2d1a 25%, #3a2312 70%, #1f120a 100%)",
@@ -542,7 +542,7 @@ function GameView({
       />
       {/* Floor plank streaks */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[58%] opacity-40 mix-blend-overlay"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[38%] opacity-40 mix-blend-overlay"
         style={{
           background:
             "repeating-linear-gradient(90deg, transparent 0 60px, rgba(0,0,0,0.35) 60px 62px, transparent 62px 130px, rgba(255,220,180,0.05) 130px 132px)",
@@ -550,9 +550,9 @@ function GameView({
       />
       {/* Wall/floor seam shadow */}
       <div
-        className="pointer-events-none absolute inset-x-0 z-0 h-20"
+        className="pointer-events-none absolute inset-x-0 z-0 h-16"
         style={{
-          bottom: "58%",
+          bottom: "38%",
           background:
             "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 100%)",
         }}
@@ -849,58 +849,16 @@ function TableArea({
 
   return (
     <div className="relative mx-auto aspect-[4/3] w-full max-w-4xl sm:aspect-[16/9]">
-      {/* Table legs — dark wood supports at the oval's corners */}
-      <div
-        className="pointer-events-none absolute z-0 h-[28%] w-[4%] rounded-b-lg"
-        style={{
-          left: "18%",
-          top: "52%",
-          background:
-            "linear-gradient(90deg, #3d2312 0%, #5c3520 40%, #4a2b18 100%)",
-          boxShadow: "inset -2px 0 4px rgba(0,0,0,0.4), 0 8px 12px rgba(0,0,0,0.45)",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute z-0 h-[28%] w-[4%] rounded-b-lg"
-        style={{
-          right: "18%",
-          top: "52%",
-          background:
-            "linear-gradient(90deg, #4a2b18 0%, #5c3520 60%, #3d2312 100%)",
-          boxShadow: "inset 2px 0 4px rgba(0,0,0,0.4), 0 8px 12px rgba(0,0,0,0.45)",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute z-0 h-[22%] w-[3.5%] rounded-b-lg"
-        style={{
-          left: "30%",
-          top: "62%",
-          background:
-            "linear-gradient(90deg, #3d2312 0%, #5c3520 40%, #4a2b18 100%)",
-          boxShadow: "inset -2px 0 4px rgba(0,0,0,0.4), 0 6px 10px rgba(0,0,0,0.4)",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute z-0 h-[22%] w-[3.5%] rounded-b-lg"
-        style={{
-          right: "30%",
-          top: "62%",
-          background:
-            "linear-gradient(90deg, #4a2b18 0%, #5c3520 60%, #3d2312 100%)",
-          boxShadow: "inset 2px 0 4px rgba(0,0,0,0.4), 0 6px 10px rgba(0,0,0,0.4)",
-        }}
-      />
-
       {/* Oval table */}
       <div
-        className="absolute inset-4 z-10 rounded-[50%] border-[10px] border-amber-950/80 shadow-[inset_0_0_60px_rgba(0,0,0,0.55),0_20px_50px_rgba(0,0,0,0.5)]"
+        className="absolute inset-4 rounded-[50%] border-[10px] border-amber-950/80 shadow-[inset_0_0_60px_rgba(0,0,0,0.55),0_20px_50px_rgba(0,0,0,0.5)]"
         style={{
           background:
             "radial-gradient(ellipse at center, #147a56 0%, #0c5c40 55%, #084b34 100%)",
         }}
       />
       {/* Table stitching */}
-      <div className="pointer-events-none absolute inset-8 z-10 rounded-[50%] border border-dashed border-amber-200/15" />
+      <div className="pointer-events-none absolute inset-8 rounded-[50%] border border-dashed border-amber-200/15" />
 
       {/* Seats */}
       {seats.map(({ p, x, y }) => {
