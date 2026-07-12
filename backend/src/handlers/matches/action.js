@@ -3,7 +3,6 @@ const { ddb, tables } = require("../../lib/dynamo");
 const { ok, badRequest, notFound, forbidden, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { applyAction } = require("../../lib/game/engine");
-const { runAITurns } = require("../../lib/game/ai-runner");
 const { redactForUser } = require("../../lib/game/view");
 const { withRefreshedTtl } = require("../../lib/matches");
 
@@ -25,8 +24,6 @@ exports.handler = withAuth(async (event, { userId }) => {
     let next;
     try {
       next = applyAction(match, userId, body);
-      // After a human action, let any bots seated after the actor take their turns.
-      runAITurns(next);
     } catch (err) {
       return badRequest(err.message);
     }
