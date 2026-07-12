@@ -4,29 +4,103 @@
 const MAX_LEN = 200;
 const MAX_STORED = 100;
 
-// Small curated list. Keep additions in lowercase; matched case-insensitively
-// as whole words. This is intentionally conservative — the goal is to
-// prevent casual abuse, not to be a comprehensive filter.
+// Bad-word roots, matched as substrings against a normalized form of each
+// token (lowercased, leetspeak mapped to letters, non-letters stripped,
+// repeated letters collapsed). This catches "fuckkkkk", "f.u.c.k",
+// "sh1t", "@sshole", "n1gg3r", etc.
+//
+// Categories: profanity, slurs (racism, homophobia, transphobia,
+// ableism, xenophobia, antisemitism), sexual content.
 const BAD_WORDS = [
-  "fuck", "fucking", "fucker", "motherfucker",
-  "shit", "shitty", "bullshit",
-  "bitch", "bastard",
-  "asshole", "arsehole", "dickhead",
-  "cunt", "twat",
-  "faggot", "fag",
-  "nigger", "nigga",
-  "retard", "retarded",
-  "slut", "whore",
-  "cock", "dick", "prick",
-  "pussy",
+  // General profanity
+  "fuck", "fuk", "fck", "phuck", "shit", "sht", "bullshit", "bitch", "biatch",
+  "bastard", "asshole", "arsehole", "dumbass", "jackass", "dipshit",
+  "cunt", "twat", "wanker", "bollocks", "bugger", "prick", "douche",
+  "damn", "goddamn", "hell", "crap", "piss", "pissed",
+  // Sexual / anatomy
+  "cock", "dick", "dickhead", "penis", "pussy", "vagina", "cum", "jizz",
+  "boner", "boobs", "boob", "tits", "titty", "titties", "nipple",
+  "sex", "sexy", "porn", "porno", "orgasm", "masturbate", "masturbation",
+  "jerkoff", "handjob", "blowjob", "bj", "rimjob", "anal", "anus",
+  "buttfuck", "buttplug", "dildo", "vibrator", "fleshlight",
+  "horny", "kinky", "milf", "gilf", "hentai", "incest",
+  "slut", "whore", "hoe", "skank", "thot", "hooker", "escort",
+  "erection", "ejaculate", "ejaculation", "creampie", "gangbang", "bukkake",
+  // Rape / abuse
+  "rape", "rapist", "molest", "molester", "pedo", "pedophile", "paedophile",
+  // Racism
+  "nigger", "nigga", "niglet", "coon", "spic", "spik", "chink", "gook",
+  "kike", "sheeny", "wetback", "beaner", "raghead", "towelhead", "sandnigger",
+  "jigaboo", "porchmonkey", "tarbaby", "pickaninny", "golliwog",
+  "cracker", "honky", "gringo", "abo", "abbo", "boong",
+  // Antisemitism
+  "kike", "hymie", "yid", "heeb",
+  // Homophobia / transphobia
+  "faggot", "fag", "faggy", "dyke", "homo", "queer", "poof", "poofter",
+  "tranny", "shemale", "ladyboy", "trap",
+  // Ableism
+  "retard", "retarded", "tard", "spaz", "spastic", "mongoloid", "cripple",
+  "midget", "gimp",
+  // Nazi / hate
+  "nazi", "hitler", "heil", "kkk",
+  // Self-harm / violence
+  "kys", "kysrf", "killyourself", "suicide",
 ];
 
+// Leet / homoglyph normalization. Maps digits and symbols to plausible
+// letters so "f\u00fcck", "sh1t", "@ss", "$hit" all normalize.
+const LEET_MAP = {
+  "0": "o", "1": "i", "2": "z", "3": "e", "4": "a", "5": "s",
+  "6": "g", "7": "t", "8": "b", "9": "g",
+  "@": "a", "$": "s", "!": "i", "|": "i", "\u00a3": "l",
+  "\u00e0": "a", "\u00e1": "a", "\u00e2": "a", "\u00e3": "a", "\u00e4": "a", "\u00e5": "a",
+  "\u00e8": "e", "\u00e9": "e", "\u00ea": "e", "\u00eb": "e",
+  "\u00ec": "i", "\u00ed": "i", "\u00ee": "i", "\u00ef": "i",
+  "\u00f2": "o", "\u00f3": "o", "\u00f4": "o", "\u00f5": "o", "\u00f6": "o",
+  "\u00f9": "u", "\u00fa": "u", "\u00fb": "u", "\u00fc": "u",
+  "\u00fd": "y", "\u00ff": "y",
+  "\u00e7": "c", "\u00f1": "n",
+};
+
+function normalize(str) {
+  // Lowercase, apply leet map, strip non-letters, collapse repeated letters.
+  let out = "";
+  const lower = str.toLowerCase();
+  for (const ch of lower) {
+    const mapped = LEET_MAP[ch] ?? ch;
+    if (mapped >= "a" && mapped <= "z") out += mapped;
+  }
+  // Collapse runs of 3+ identical letters to 2, then any duplicate to single
+  // for matching purposes ("fuuuck" -> "fuck", "asss" -> "as"). We collapse
+  // fully to single to be aggressive.
+  return out.replace(/(.)\1+/g, "$1");
+}
+
+// Precompute normalized bad-word roots (collapsed to unique letters too).
+const BAD_NORM = Array.from(new Set(BAD_WORDS.map((w) => normalize(w)).filter(Boolean)));
+
+function tokenHasBadWord(token) {
+  const n = normalize(token);
+  if (!n) return false;
+  return BAD_NORM.some((bad) => n.includes(bad));
+}
+
+function messageHasBadWord(text) {
+  // Catches spaced-out attempts like "f u c k" by normalizing the whole
+  // message (which strips spaces entirely).
+  const n = normalize(text);
+  if (!n) return false;
+  return BAD_NORM.some((bad) => n.includes(bad));
+}
+
 function censorProfanity(text) {
-  return text.replace(/[A-Za-z]{3,}/g, (word) => {
-    const lower = word.toLowerCase();
-    if (!BAD_WORDS.includes(lower)) return word;
-    if (word.length <= 2) return word;
-    return word[0] + "*".repeat(word.length - 1);
+  // Censor per token so surrounding words stay readable.
+  return text.replace(/\S+/g, (token) => {
+    if (!tokenHasBadWord(token)) return token;
+    // Keep first letter if it's a letter, star the rest.
+    const first = token[0];
+    if (/[A-Za-z]/.test(first)) return first + "*".repeat(Math.max(1, token.length - 1));
+    return "*".repeat(token.length);
   });
 }
 
