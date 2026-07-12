@@ -3,6 +3,7 @@ const { ddb, tables } = require("../../lib/dynamo");
 const { ok, badRequest, notFound, forbidden, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { nextRound } = require("../../lib/game/engine");
+const { runAITurns } = require("../../lib/game/ai-runner");
 const { redactForUser } = require("../../lib/game/view");
 const { withRefreshedTtl } = require("../../lib/matches");
 
@@ -20,6 +21,7 @@ exports.handler = withAuth(async (event, { userId }) => {
     const expectedVersion = match.version ?? 0;
     let next = nextRound(match);
     next.version = expectedVersion + 1;
+    runAITurns(next);
     next = withRefreshedTtl(next);
 
     try {
