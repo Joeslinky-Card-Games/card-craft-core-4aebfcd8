@@ -565,44 +565,6 @@ function GameView({
             "radial-gradient(ellipse 70% 55% at 50% 42%, rgba(255,214,140,0.18) 0%, rgba(255,190,110,0.08) 35%, rgba(0,0,0,0) 70%)",
         }}
       />
-      {/* Felt table oval */}
-      <div
-        className="pointer-events-none absolute z-0"
-        style={{
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "min(1180px, 96vw)",
-          height: "min(760px, 78vh)",
-          borderRadius: "50%",
-          background:
-            "radial-gradient(ellipse at 50% 30%, #1a8a5c 0%, #0f6a48 35%, #0a4a32 70%, #063220 100%)",
-          boxShadow:
-            "0 40px 80px -20px rgba(0,0,0,0.85), 0 20px 40px -10px rgba(0,0,0,0.7), inset 0 0 60px rgba(0,0,0,0.45), inset 0 0 0 8px #3a2110, inset 0 0 0 10px rgba(120,70,30,0.6)",
-        }}
-      />
-      {/* Felt weave texture */}
-      <div
-        className="pointer-events-none absolute z-0 opacity-25 mix-blend-overlay"
-        style={{
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "min(1180px, 96vw)",
-          height: "min(760px, 78vh)",
-          borderRadius: "50%",
-          background:
-            "repeating-linear-gradient(45deg,transparent 0 3px,rgba(255,255,255,0.05) 3px 6px)",
-        }}
-      />
-      {/* Warm spotlight hitting the felt from above */}
-      <div
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 42% 38% at 50% 44%, rgba(255,230,170,0.32) 0%, rgba(255,210,140,0.14) 30%, rgba(255,190,110,0.04) 55%, rgba(0,0,0,0) 75%)",
-        }}
-      />
       {/* Vignette to sink the room edges */}
       <div
         className="pointer-events-none absolute inset-0 z-0"
