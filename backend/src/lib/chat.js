@@ -16,7 +16,7 @@ const BAD_WORDS = [
   "fuck", "fuk", "fck", "phuck", "shit", "sht", "bullshit", "bitch", "biatch",
   "bastard", "asshole", "arsehole", "dumbass", "jackass", "dipshit",
   "cunt", "twat", "wanker", "bollocks", "bugger", "prick", "douche",
-  "damn", "goddamn", "hell", "crap", "piss", "pissed",
+  "goddamn", "piss", "pissed",
   // Sexual / anatomy
   "cock", "dick", "dickhead", "penis", "pussy", "vagina", "cum", "jizz",
   "boner", "boobs", "boob", "tits", "titty", "titties", "nipple",
@@ -63,45 +63,66 @@ const LEET_MAP = {
 };
 
 function normalize(str) {
-  // Lowercase, apply leet map, strip non-letters, collapse repeated letters.
+  // Lowercase, apply leet map, strip non-letters. Does NOT collapse repeats;
+  // repetition tolerance lives in the per-word regexes below.
   let out = "";
-  const lower = str.toLowerCase();
-  for (const ch of lower) {
+  for (const ch of String(str).toLowerCase()) {
     const mapped = LEET_MAP[ch] ?? ch;
     if (mapped >= "a" && mapped <= "z") out += mapped;
   }
-  // Collapse runs of 3+ identical letters to 2, then any duplicate to single
-  // for matching purposes ("fuuuck" -> "fuck", "asss" -> "as"). We collapse
-  // fully to single to be aggressive.
-  return out.replace(/(.)\1+/g, "$1");
+  return out;
 }
 
-// Precompute normalized bad-word roots (collapsed to unique letters too).
-const BAD_NORM = Array.from(new Set(BAD_WORDS.map((w) => normalize(w)).filter(Boolean)));
+function esc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+// For each bad word, allow each letter to repeat: "fuck" -> /f+u+c+k+/.
+// Short words (≤3 letters after dedupe of collapsed form) must match the
+// whole normalized token — otherwise "hoe" flags "shoe", "fag" flags
+// "flagon", etc. Longer words match as a substring.
+const BAD_PATTERNS = (() => {
+  const seen = new Set();
+  const shortExact = [];
+  const longSub = [];
+  for (const w of BAD_WORDS) {
+    const n = normalize(w);
+    if (!n || seen.has(n)) continue;
+    seen.add(n);
+    const src = n.split("").map((c) => esc(c) + "+").join("");
+    if (n.length <= 3) shortExact.push(new RegExp("^" + src + "$"));
+    else longSub.push(new RegExp(src));
+  }
+  return { shortExact, longSub };
+})();
+
+function normalizedIsBad(n) {
+  if (!n) return false;
+  if (BAD_PATTERNS.shortExact.some((r) => r.test(n))) return true;
+  if (BAD_PATTERNS.longSub.some((r) => r.test(n))) return true;
+  return false;
+}
 
 function tokenHasBadWord(token) {
-  const n = normalize(token);
-  if (!n) return false;
-  return BAD_NORM.some((bad) => n.includes(bad));
+  return normalizedIsBad(normalize(token));
 }
 
-function messageHasBadWord(text) {
-  // Catches spaced-out attempts like "f u c k" by normalizing the whole
-  // message (which strips spaces entirely).
-  const n = normalize(text);
-  if (!n) return false;
-  return BAD_NORM.some((bad) => n.includes(bad));
+function censorToken(token) {
+  const first = token[0];
+  const rest = "*".repeat(Math.max(1, token.length - 1));
+  return /[A-Za-z]/.test(first) ? first + rest : "*".repeat(token.length);
 }
 
 function censorProfanity(text) {
-  // Censor per token so surrounding words stay readable.
-  return text.replace(/\S+/g, (token) => {
-    if (!tokenHasBadWord(token)) return token;
-    // Keep first letter if it's a letter, star the rest.
-    const first = token[0];
-    if (/[A-Za-z]/.test(first)) return first + "*".repeat(Math.max(1, token.length - 1));
-    return "*".repeat(token.length);
-  });
+  // Pass 1: per-token censor for normal cases.
+  let out = text.replace(/\S+/g, (token) => (tokenHasBadWord(token) ? censorToken(token) : token));
+  // Pass 2: catch spaced-out attempts like "f u c k" or "s h i t" by
+  // normalizing the whole line and, if that contains a bad word, censoring
+  // the letter-run region. Simplest and safest: if the fully-normalized
+  // message is bad but pass 1 didn't already star everything, replace all
+  // remaining alphabetic runs with stars.
+  if (normalizedIsBad(normalize(out))) {
+    out = out.replace(/[A-Za-z]+/g, (w) => censorToken(w));
+  }
+  return out;
 }
 
 function sanitizeText(raw) {
