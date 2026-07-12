@@ -62,121 +62,166 @@ function LobbyPage() {
   void apiFetch;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Lobby</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Start a new table or join an existing one — public or by ID.
-          </p>
-        </div>
-        <Button onClick={() => setJoinOpen(true)} disabled={!API_URL}>
-          Join table
-        </Button>
-      </div>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Ambient lobby background */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-30"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in oklab, var(--primary) 25%, transparent), transparent 60%), radial-gradient(ellipse 60% 40% at 110% 80%, color-mix(in oklab, var(--accent) 15%, transparent), transparent 50%)",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%), repeating-linear-gradient(-45deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%)",
+          backgroundSize: "40px 40px",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute left-[5%] top-[12%] select-none text-[clamp(8rem,20vw,16rem)] leading-none text-primary/[0.04]"
+      >
+        ♠
+      </span>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute right-[8%] top-[20%] select-none text-[clamp(7rem,18vw,14rem)] leading-none text-primary/[0.04]"
+      >
+        ♥
+      </span>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-[18%] left-[10%] select-none text-[clamp(9rem,22vw,18rem)] leading-none text-primary/[0.04]"
+      >
+        ♦
+      </span>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-[22%] right-[12%] select-none text-[clamp(7rem,16vw,13rem)] leading-none text-primary/[0.04]"
+      >
+        ♣
+      </span>
 
-      {!API_URL && (
-        <div className="mb-6 rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-          Backend not configured — set <code>VITE_API_URL</code> to your API Gateway URL.
+      <main className="relative z-10 mx-auto max-w-6xl px-6 py-12">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Lobby</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Start a new table or join an existing one — public or by ID.
+            </p>
+          </div>
+          <Button onClick={() => setJoinOpen(true)} disabled={!API_URL}>
+            Join table
+          </Button>
         </div>
-      )}
 
-      {myMatches.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold">Your tables</h2>
-          <p className="mb-3 text-xs text-muted-foreground">
-            Rejoin a table you're already seated at.
-          </p>
-          <ul className="divide-y divide-border rounded-md border border-border">
-            {myMatches.map((m) => {
-              const gameName = games.find((g) => g.id === m.gameId)?.name ?? m.gameId;
-              return (
-                <li key={m.matchId} className="flex items-center justify-between px-4 py-3 text-sm">
-                  <div>
-                    <div className="font-medium">
-                      {gameName}
-                      {m.visibility === "private" && (
-                        <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-500">
-                          Private
-                        </span>
-                      )}
-                        {m.code && (
-                          <span className="ml-2 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] tracking-widest text-muted-foreground">
-                            {m.code}
+        {!API_URL && (
+          <div className="mb-6 rounded-md border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+            Backend not configured — set <code>VITE_API_URL</code> to your API Gateway URL.
+          </div>
+        )}
+
+        {myMatches.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold">Your tables</h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Rejoin a table you're already seated at.
+            </p>
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {myMatches.map((m) => {
+                const gameName = games.find((g) => g.id === m.gameId)?.name ?? m.gameId;
+                return (
+                  <li key={m.matchId} className="flex items-center justify-between px-4 py-3 text-sm">
+                    <div>
+                      <div className="font-medium">
+                        {gameName}
+                        {m.visibility === "private" && (
+                          <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-500">
+                            Private
                           </span>
                         )}
+                          {m.code && (
+                            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] tracking-widest text-muted-foreground">
+                              {m.code}
+                            </span>
+                          )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {m.status} · {m.players.length}/{m.maxPlayers} players · created {new Date(m.createdAt).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {m.status} · {m.players.length}/{m.maxPlayers} players · created {new Date(m.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => navigate({ to: "/match/$matchId", params: { matchId: m.matchId } })}
-                  >
-                    Rejoin
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+                    <Button
+                      size="sm"
+                      onClick={() => navigate({ to: "/match/$matchId", params: { matchId: m.matchId } })}
+                    >
+                      Rejoin
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {games.map((game) => (
-          <div
-            key={game.id}
-            className="flex flex-col justify-between rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary/40"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-card-foreground">{game.name}</h2>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  {game.minPlayers === game.maxPlayers
-                    ? `${game.maxPlayers} players`
-                    : `${game.minPlayers}–${game.maxPlayers} players`}
-                </span>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {games.map((game) => (
+            <div
+              key={game.id}
+              className="flex flex-col justify-between rounded-lg border border-border bg-card/80 p-6 shadow-sm backdrop-blur-sm transition-colors hover:border-primary/40 hover:bg-card"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-card-foreground">{game.name}</h2>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {game.minPlayers === game.maxPlayers
+                      ? `${game.maxPlayers} players`
+                      : `${game.minPlayers}–${game.maxPlayers} players`}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">{game.description}</p>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">{game.description}</p>
+              <div className="mt-6">
+                {game.status === "available" ? (
+                  <button
+                    onClick={() => setSelectedGame(game.id)}
+                    className="w-full rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+                  >
+                    Create table
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full cursor-not-allowed rounded-md border border-dashed border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
+                  >
+                    Coming soon
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="mt-6">
-              {game.status === "available" ? (
-                <button
-                  onClick={() => setSelectedGame(game.id)}
-                  className="w-full rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
-                >
-                  Create table
-                </button>
-              ) : (
-                <button
-                  disabled
-                  className="w-full cursor-not-allowed rounded-md border border-dashed border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
-                >
-                  Coming soon
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <CreateTableDialog
-        game={activeGame}
-        open={Boolean(selectedGame)}
-        onOpenChange={(v) => { if (!v) setSelectedGame(null); }}
-        onSubmit={(payload) => createMut.mutate(payload)}
-        pending={createMut.isPending}
-        error={createMut.error instanceof Error ? createMut.error.message : null}
-      />
+        <CreateTableDialog
+          game={activeGame}
+          open={Boolean(selectedGame)}
+          onOpenChange={(v) => { if (!v) setSelectedGame(null); }}
+          onSubmit={(payload) => createMut.mutate(payload)}
+          pending={createMut.isPending}
+          error={createMut.error instanceof Error ? createMut.error.message : null}
+        />
 
-      <JoinDialog
-        open={joinOpen}
-        onOpenChange={setJoinOpen}
-        games={games}
-        userId={userId}
-        identity={identity}
-      />
-    </main>
+        <JoinDialog
+          open={joinOpen}
+          onOpenChange={setJoinOpen}
+          games={games}
+          userId={userId}
+          identity={identity}
+        />
+      </main>
+    </div>
   );
 }
