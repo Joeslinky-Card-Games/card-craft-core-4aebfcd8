@@ -32,6 +32,7 @@ exports.handler = withAuth(async () => {
     let scanned = 0;
     let roundsBackfilled = 0;
     let matchesBackfilled = 0;
+    const details = [];
     let ExclusiveStartKey;
     do {
       const res = await ddb.send(new ScanCommand({
@@ -44,15 +45,22 @@ exports.handler = withAuth(async () => {
         const recordedThrough = Number(match.roundsRecordedThrough || 0);
         const roundIsOver = match.status === "round-complete" || match.status === "complete";
         const matchIsOver = match.status === "complete";
-        const missingStatsRepair =
-          roundIsOver && round > 0 && (match.roundsRecordedThrough || match.statsRecorded) &&
-          !(await hasAnyStatsForMatch(match));
+        const hasStats = roundIsOver && round > 0 ? await hasAnyStatsForMatch(match) : true;
+        const missingStatsRepair = roundIsOver && round > 0 && !hasStats;
         const isRoundDone =
-          roundIsOver &&
-          round > 0 &&
-          (recordedThrough < round || missingStatsRepair);
+          roundIsOver && round > 0 && (recordedThrough < round || missingStatsRepair);
         const isMatchDone = matchIsOver && (!match.statsRecorded || missingStatsRepair);
-        if (!isRoundDone && !isMatchDone) continue;
+        if (!isRoundDone && !isMatchDone) {
+          details.push({
+            matchId: match.matchId,
+            status: match.status,
+            round,
+            recordedThrough,
+            hasStats,
+            skipped: true,
+          });
+          continue;
+        }
 
         if (isRoundDone) {
           await recordRoundCompletion(match);
@@ -65,11 +73,20 @@ exports.handler = withAuth(async () => {
           matchesBackfilled++;
         }
         await ddb.send(new PutCommand({ TableName: tables.matches, Item: match }));
+        details.push({
+          matchId: match.matchId,
+          status: match.status,
+          round,
+          recordedThrough,
+          hasStats,
+          recordedRound: isRoundDone,
+          recordedMatch: isMatchDone,
+        });
       }
       ExclusiveStartKey = res.LastEvaluatedKey;
     } while (ExclusiveStartKey);
 
-    return ok({ scanned, roundsBackfilled, matchesBackfilled });
+    return ok({ scanned, roundsBackfilled, matchesBackfilled, details });
   } catch (err) {
     console.error("backfill-stats failed", err);
     return serverError();
