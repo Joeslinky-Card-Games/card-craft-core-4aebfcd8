@@ -50,9 +50,11 @@ function startRound(state, round) {
     hands[p] = [];
     discards[p] = [[], [], [], []];
   }
-  // deal 5 to first player (rest draw at start of their turn)
-  hands[order[0]] = deck.slice(idx, idx + 5);
-  idx += 5;
+  // Deal 5 to every player up-front so the first turn can act immediately.
+  for (const p of order) {
+    hands[p] = deck.slice(idx, idx + 5);
+    idx += 5;
+  }
   return {
     ...state,
     round,
