@@ -2,8 +2,7 @@ const { GetCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
 const { ddb, tables } = require("../../lib/dynamo");
 const { ok, badRequest, notFound, forbidden, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
-const { startMatch, startRound } = require("../../lib/game/engine");
-const { redactForUser } = require("../../lib/game/view");
+const engines = require("../../lib/engines");
 const { withRefreshedTtl } = require("../../lib/matches");
 
 exports.handler = withAuth(async (event, { userId }) => {
@@ -18,8 +17,8 @@ exports.handler = withAuth(async (event, { userId }) => {
     if (match.players.length < minPlayers) return badRequest(`Need at least ${minPlayers} players`);
 
     const expectedVersion = match.version ?? 0;
-    const base = startMatch({ matchId: match.matchId, players: match.players });
-    const dealt = startRound(base, 1);
+    const base = engines.startMatch(match.gameId, { matchId: match.matchId, players: match.players });
+    const dealt = engines.startRound(match.gameId, base, 1);
     // Preserve lobby metadata + bump version.
     let next = {
       ...match,
@@ -44,7 +43,7 @@ exports.handler = withAuth(async (event, { userId }) => {
       }
       throw err;
     }
-    return ok(redactForUser(next, userId));
+    return ok(engines.redactForUser(next, userId));
   } catch (err) {
     console.error(err);
     return serverError();
