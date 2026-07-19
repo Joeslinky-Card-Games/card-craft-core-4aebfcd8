@@ -141,6 +141,7 @@ export type StatRow = {
   gamesWon?: number;
   roundsPlayed?: number;
   roundsWon?: number;
+  totalPoints?: number;
   updatedAt?: string;
 };
 
