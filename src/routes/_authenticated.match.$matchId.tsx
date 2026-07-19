@@ -31,6 +31,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { StackAttackMatch } from "@/components/stackattack/StackAttackMatch";
 
 export const Route = createFileRoute("/_authenticated/match/$matchId")({
   head: () => ({
