@@ -23,6 +23,7 @@ function addTotals(totalsByUser, match) {
   const roundWinner = match.goneOutBy;
   const matchIsOver = match.status === "complete";
   const matchWinner = match.winner;
+  const matchScores = match.scores || {};
 
   for (const userId of humans) {
     const key = `${gameId}\u0000${userId}`;
@@ -34,12 +35,14 @@ function addTotals(totalsByUser, match) {
       roundsWon: 0,
       gamesPlayed: 0,
       gamesWon: 0,
+      totalPoints: 0,
     };
     totals.username = usernameFor(userId, usernames) || totals.username;
     totals.roundsPlayed += roundsPlayed;
     totals.roundsWon += roundWinner === userId ? 1 : 0;
     totals.gamesPlayed += matchIsOver ? 1 : 0;
     totals.gamesWon += matchIsOver && matchWinner === userId ? 1 : 0;
+    totals.totalPoints += matchIsOver ? Number(matchScores[userId] || 0) : 0;
     totalsByUser.set(key, totals);
   }
 }
