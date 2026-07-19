@@ -125,6 +125,22 @@ Resources:
             Method: GET
             Path: /games/{gameId}
 
+  GameRuntimeFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/games/runtime.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref StatsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /games/{gameId}/runtime
+
   # ---------- Matches ----------
   ListMatchesFn:
     Type: AWS::Serverless::Function
