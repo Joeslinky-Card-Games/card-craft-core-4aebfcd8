@@ -1,6 +1,10 @@
 const { UpdateCommand } = require("@aws-sdk/lib-dynamodb");
 const { ddb, tables } = require("./dynamo");
 
+const CANONICAL_GAME_IDS = {
+  rummy: "charlottes-web",
+};
+
 function isHuman(playerId) {
   return typeof playerId === "string" && !playerId.startsWith("ai-");
 }
@@ -9,12 +13,17 @@ function usernameFor(userId, usernames) {
   return String(usernames?.[userId] || `player-${String(userId).slice(-4)}`).slice(0, 64);
 }
 
+function gameIdForStats(match) {
+  const raw = typeof match?.gameId === "string" && match.gameId ? match.gameId : "charlottes-web";
+  return CANONICAL_GAME_IDS[raw] || raw;
+}
+
 // Record a single completed round: everyone at the table gets +1 roundsPlayed,
 // the player who went out gets +1 roundsWon. `rating` mirrors roundsWon so
 // the byGame GSI orders leaderboard rows by rounds won.
 async function recordRoundCompletion(match) {
   if (!match) return;
-  const gameId = match.gameId;
+  const gameId = gameIdForStats(match);
   const usernames = match.usernames || {};
   const humans = (match.players || []).filter(isHuman);
   const winner = match.goneOutBy;
@@ -26,17 +35,16 @@ async function recordRoundCompletion(match) {
           TableName: tables.stats,
           Key: { userId, gameId },
           UpdateExpression:
-            "ADD roundsPlayed :one, roundsWon :won, rating :won SET username = :name, updatedAt = :now",
+            "SET roundsPlayed = if_not_exists(roundsPlayed, :zero) + :one, roundsWon = if_not_exists(roundsWon, :zero) + :won, rating = if_not_exists(rating, :zero) + :won, username = :name, updatedAt = :now",
           ExpressionAttributeValues: {
+            ":zero": 0,
             ":one": 1,
             ":won": won,
             ":name": usernameFor(userId, usernames),
             ":now": new Date().toISOString(),
           },
         })
-      ).catch((err) => {
-        console.error("round stats update failed", { userId, gameId, err });
-      });
+      );
     })
   );
 }
@@ -44,7 +52,7 @@ async function recordRoundCompletion(match) {
 // Called exactly once per completed match (guarded by match.statsRecorded).
 async function recordMatchCompletion(match) {
   if (!match || match.status !== "complete") return;
-  const gameId = match.gameId;
+  const gameId = gameIdForStats(match);
   const winner = match.winner;
   const usernames = match.usernames || {};
   const humans = (match.players || []).filter(isHuman);
@@ -56,19 +64,18 @@ async function recordMatchCompletion(match) {
           TableName: tables.stats,
           Key: { userId, gameId },
           UpdateExpression:
-            "ADD gamesPlayed :one, gamesWon :won SET username = :name, updatedAt = :now",
+            "SET gamesPlayed = if_not_exists(gamesPlayed, :zero) + :one, gamesWon = if_not_exists(gamesWon, :zero) + :won, rating = if_not_exists(rating, :zero), username = :name, updatedAt = :now",
           ExpressionAttributeValues: {
+            ":zero": 0,
             ":one": 1,
             ":won": won,
             ":name": usernameFor(userId, usernames),
             ":now": new Date().toISOString(),
           },
         })
-      ).catch((err) => {
-        console.error("match stats update failed", { userId, gameId, err });
-      });
+      );
     })
   );
 }
 
-module.exports = { recordMatchCompletion, recordRoundCompletion };
+module.exports = { recordMatchCompletion, recordRoundCompletion, gameIdForStats };
