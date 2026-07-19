@@ -124,9 +124,13 @@ export type Profile = {
 export type StatRow = {
   userId: string;
   gameId: string;
+  username?: string;
   rating?: number;
   wins?: number;
   losses?: number;
+  gamesPlayed?: number;
+  gamesWon?: number;
+  updatedAt?: string;
 };
 
 export const endpoints = {

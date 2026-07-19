@@ -5,6 +5,7 @@ const { withAuth } = require("../../lib/auth");
 const { nextRound } = require("../../lib/game/engine");
 const { redactForUser } = require("../../lib/game/view");
 const { withRefreshedTtl } = require("../../lib/matches");
+const { recordMatchCompletion } = require("../../lib/stats");
 
 exports.handler = withAuth(async (event, { userId }) => {
   const matchId = event.pathParameters?.matchId;
@@ -21,6 +22,8 @@ exports.handler = withAuth(async (event, { userId }) => {
     let next = nextRound(match);
     next.version = expectedVersion + 1;
     next = withRefreshedTtl(next);
+    const shouldRecordStats = next.status === "complete" && !match.statsRecorded;
+    if (shouldRecordStats) next.statsRecorded = true;
 
     try {
       await ddb.send(
@@ -37,6 +40,7 @@ exports.handler = withAuth(async (event, { userId }) => {
       }
       throw err;
     }
+    if (shouldRecordStats) await recordMatchCompletion(next);
     return ok(redactForUser(next, userId));
   } catch (err) {
     console.error(err);

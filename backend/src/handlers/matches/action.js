@@ -5,6 +5,7 @@ const { withAuth } = require("../../lib/auth");
 const { applyAction } = require("../../lib/game/engine");
 const { redactForUser } = require("../../lib/game/view");
 const { withRefreshedTtl } = require("../../lib/matches");
+const { recordMatchCompletion } = require("../../lib/stats");
 
 exports.handler = withAuth(async (event, { userId }) => {
   const matchId = event.pathParameters?.matchId;
@@ -29,6 +30,9 @@ exports.handler = withAuth(async (event, { userId }) => {
     }
 
     const nextWithTtl = withRefreshedTtl(next);
+    const shouldRecordStats =
+      nextWithTtl.status === "complete" && !match.statsRecorded;
+    if (shouldRecordStats) nextWithTtl.statsRecorded = true;
     try {
       await ddb.send(
         new PutCommand({
@@ -44,6 +48,7 @@ exports.handler = withAuth(async (event, { userId }) => {
       }
       throw err;
     }
+    if (shouldRecordStats) await recordMatchCompletion(nextWithTtl);
     return ok(redactForUser(nextWithTtl, userId));
   } catch (err) {
     console.error(err);

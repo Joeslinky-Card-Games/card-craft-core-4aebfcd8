@@ -284,6 +284,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref MatchesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StatsTable
       Events:
         Api:
           Type: HttpApi
@@ -300,6 +302,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref MatchesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StatsTable
       Events:
         Api:
           Type: HttpApi
@@ -332,6 +336,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref MatchesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StatsTable
       Events:
         Api:
           Type: HttpApi
