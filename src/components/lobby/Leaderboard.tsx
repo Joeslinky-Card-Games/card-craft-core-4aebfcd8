@@ -40,7 +40,7 @@ export function Leaderboard({ games }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Leaderboard</h2>
-          <p className="text-xs text-muted-foreground">Top players ranked by wins.</p>
+          <p className="text-xs text-muted-foreground">Ranked by round wins.</p>
         </div>
         {availableGames.length > 1 && (
           <select
