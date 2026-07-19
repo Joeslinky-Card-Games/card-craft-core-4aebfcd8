@@ -1,98 +1,72 @@
-## Goal
+## Scope
 
-Support **private tables secured with a password**, replace the always-visible open-tables list on the lobby with a **Join table** dialog, and give a player who accidentally left a table a way to **rejoin** it.
+1. **Remove Backfill button** from the Leaderboard UI (keep the endpoint, just hide the control).
+2. **Confirm leaderboards are per-game** — the Leaderboard already queries by `gameId`; verify the lobby switches it when the selected game changes and each game gets its own ranking.
+3. **Add a Skip-Bo–style game** — new game entry in the catalog, new game engine, new match view, wired into the existing lobby/match flow.
 
-## Backend (AWS SAM / DynamoDB)
+## Naming & branding
 
-Match record gains two optional fields:
-- `visibility`: `"public" | "private"` (default `"public"`)
-- `passwordHash`: sha-256 hex digest of the password, only set when private. Never returned by any endpoint.
+Rename the game to **"Stack Attack"** (Skip-Bo clone, distinct name).
+Wild cards renamed **"WILD"** badges (not "SKIP-BO").
 
-Handler changes in `backend/src/handlers/matches/`:
+## Card design
 
-1. `create.js`
-   - Accept `visibility` and `password` in the body.
-   - When `visibility === "private"`, require a 4–64 char password, store `sha256(password)` as `passwordHash`, and stamp `visibility = "private"`.
-   - Strip `passwordHash` before returning the record.
+Custom Stack Attack card face — different from the rummy playing-card face:
+- Rounded-square face, thick 2-color border, oversized centered numeral (1–12).
+- Numerals in a heavy geometric display font (Space Grotesk / Bricolage) with a subtle drop-shadow.
+- Each number tier gets a color band (1–4 teal, 5–8 amber, 9–12 magenta) so stacks read at a glance.
+- Wild card: holographic gradient face with a "★ WILD" wordmark and no number.
+- Card back: dark navy with a diagonal stripe motif and small "SA" monogram.
 
-2. `join.js`
-   - Read the match first, verify `visibility`. If private, require `password` in body and compare `sha256(password)` to `passwordHash` before running the existing conditional `UpdateCommand`. Return `401` on mismatch.
-   - Return the record with `passwordHash` stripped.
-   - Also allow re-entering when the player is already in `players` (idempotent → return the match, no update).
+## Game rules (Stack Attack)
 
-3. `list.js`
-   - Filter out matches where `visibility === "private"` from the public "open" query. Private tables should never appear in the browse list.
+- 162-card deck: 12 copies of each rank 1–12 + 18 Wilds.
+- 2–6 players. Each player deals a **Stockpile** of 20 (2p) / 15 (3–4p) / 10 (5–6p) cards, top card face-up.
+- On your turn: draw up to 5 cards in hand. Play cards onto shared **Build piles** in strict 1→12 sequence (Wild = any next value). Play from hand, stockpile top, or your 4 personal **Discard piles**. Completed 1–12 build pile is cleared back to a completed pile. Turn ends by discarding one card from hand onto any of your 4 discard piles.
+- First to empty their Stockpile wins the round; match = configurable rounds (default 1).
 
-4. New `mine.js` handler + `GET /matches/mine` route in `template.yaml`
-   - Auth-required. Scans (or queries the `byStatus` GSI for each status) and filters to matches where `players` contains the caller's `userId` and `status !== "complete"`. Returns `{ matches: [...] }` with `passwordHash` stripped.
-   - This is what powers the "Your tables" rejoin list.
+## Backend changes
 
-Shared helper in `backend/src/lib/matches.js`:
-- `stripSecret(match)` — clone and delete `passwordHash`.
-- `hashPassword(pw)` — `crypto.createHash("sha256").update(pw, "utf8").digest("hex")`.
+- `backend/src/lib/games.js`: add `stack-attack` entry, `status: "available"`.
+- New engine module `backend/src/lib/stackattack/` with:
+  - `deck.js` – build/shuffle 162-card deck (uses existing `mulberry32`).
+  - `engine.js` – `createMatch`, `startRound`, `applyAction` (play-from-hand/stock/discard, end-turn, draw-refill), win detection.
+  - `view.js` – per-player redaction (hide opponents' hand + face-down stock body, show stock-top + discard tops + build piles + counts).
+  - `ai.js` – basic greedy bot (prefer stock-top plays, then discard-top, then hand; discard non-wilds to balanced piles).
+- Route the existing match handlers (`create`, `action`, `ai-step`, `view`, `next-round`, `play-again`) through a per-game dispatcher keyed on `match.gameId`; rummy code moves untouched behind the dispatcher.
+- Stats: reuse `stats.js` — record `gamesPlayed`/`gamesWon` per `gameId` so leaderboards stay separate.
 
-Password rule (server-enforced): trim, min 4, max 64 characters.
+## Frontend changes
 
-## Frontend
+- Lobby: existing game picker already lists catalog entries; Stack Attack becomes selectable when `status === "available"`. Leaderboard already re-queries on `gameId` change — no change needed once #1 is done.
+- New route `src/routes/_authenticated.match.$matchId.tsx` currently branches on rummy; introduce a game-typed router component that renders either the existing rummy `MatchView` or a new `StackAttackView`.
+- New components under `src/components/stackattack/`:
+  - `Card.tsx` – card face using the design above (semantic tokens for the 3 tier colors + wild gradient added to `src/styles.css`).
+  - `BuildPile.tsx`, `DiscardPile.tsx`, `Stockpile.tsx`, `Hand.tsx`.
+  - `StackAttackView.tsx` – table layout: 4 build piles centered, seats around, own hand + 4 discard piles + stockpile at bottom.
+- Reuse existing chat, rules dialog (rewritten copy), play-again voting, seating logic.
 
-### `src/lib/api.ts`
-- Extend `Match` with `visibility?: "public" | "private"`.
-- Add:
-  - `endpoints.myMatches()` → `GET /matches/mine`.
-  - Payloads for create (`{ gameId, maxPlayers, visibility?, password? }`) and join (`{ password? }` via POST body).
-
-### `src/routes/_authenticated.lobby.tsx`
-
-Remove the inline "Open tables" list entirely. Replace the single "Create table" per-game section with two top-level actions:
+## Files touched (high level)
 
 ```text
-[  Your tables (N)  ]     [ Join table ]
-                                       ▲ opens JoinDialog
-   Game grid → each card has "Create table"
+backend/
+  src/lib/games.js                            (add stack-attack)
+  src/lib/stackattack/{deck,engine,view,ai}.js (new)
+  src/lib/matchDispatcher.js                  (new, routes by gameId)
+  src/handlers/matches/{create,action,ai-step,view,next-round,play-again}.js (dispatch)
+src/
+  styles.css                                  (stack-attack color tokens)
+  routes/_authenticated.match.$matchId.tsx    (game-typed router)
+  components/stackattack/*                    (new)
+  components/lobby/Leaderboard.tsx            (remove Backfill button)
+  components/game/RulesDialog.tsx             (per-game rules text)
 ```
 
-1. **Your tables** section (only shown when the query returns matches)
-   - Data: `useQuery(["matches", "mine"], endpoints.myMatches)` with a 5s refetch.
-   - Renders each active match with game name, player count, status, and an **Enter** button that navigates to `/match/$matchId`. This is the accidental-leave rejoin path.
+## Not included
 
-2. **Create table dialog** (extends the existing modal)
-   - Adds a `Visibility` toggle: `Public | Private`.
-   - When Private, reveal a `Password` input (min 4 chars) and a hint "Share this password with players you invite."
-   - On submit, passes `visibility` and `password` to the create mutation.
+- Fancy Skip-Bo tournament formats, chat moderation changes, mobile-only polish beyond what the layout naturally provides.
+- Deleting the backfill endpoint — only the UI button is hidden so you can still hit it manually if needed.
 
-3. **New JoinDialog** (opened by "Join table")
-   - Two tabs:
-     - **Browse open tables** — the previous open-matches list, unchanged in behavior (public matches only).
-     - **Join by ID** — two inputs: `Table ID` (UUID) and `Password` (optional; required if the table is private). Submit calls `POST /matches/{id}/join` with `{ password }`.
-   - Shows the server error message on 401/403 (e.g. "Incorrect password", "Table is full").
+## Open question
 
-### `src/components/site-header.tsx` (small polish)
-- Add a `Lobby` link if not already there so the rejoin path is one click from anywhere. (No-op if it already exists.)
-
-## Security notes
-
-- Passwords are hashed on the server before storage; the client never receives the hash.
-- Password comparison uses a fixed-length hex digest so a `timingSafeEqual` compare is straightforward; length is not sensitive since digests are always 64 chars.
-- Private matches are excluded from `GET /matches?status=open`, so a private table can only be joined by someone who knows the `matchId` **and** the password.
-- Zod-style validation on both client and server: password 4–64 chars, `matchId` must match a UUID regex before the join call.
-
-## Out of scope
-
-- No "leave table" action yet — the rejoin flow already covers accidental navigation away. A dedicated leave action can come later.
-- No password rotation or per-user invite links; the shared password is the gate.
-
-## File touch list
-
-Backend
-- `backend/src/handlers/matches/create.js` (edit)
-- `backend/src/handlers/matches/join.js` (edit)
-- `backend/src/handlers/matches/list.js` (edit)
-- `backend/src/handlers/matches/mine.js` (new)
-- `backend/src/lib/matches.js` (new — `hashPassword`, `stripSecret`)
-- `backend/template.yaml` (new `GET /matches/mine` route + function)
-
-Frontend
-- `src/lib/api.ts` (types + `myMatches`, extended create/join payloads)
-- `src/routes/_authenticated.lobby.tsx` (rewrite lobby layout, add dialogs)
-- `src/components/lobby/JoinDialog.tsx` (new)
-- `src/components/lobby/CreateTableDialog.tsx` (new — extracted from the current inline modal, adds visibility/password)
+Confirm the name **"Stack Attack"** works, or tell me another; I'll swap it before implementing.
