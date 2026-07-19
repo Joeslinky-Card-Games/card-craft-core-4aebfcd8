@@ -2,8 +2,7 @@ const { GetCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
 const { ddb, tables } = require("../../lib/dynamo");
 const { ok, badRequest, notFound, forbidden, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
-const { applyAction } = require("../../lib/game/engine");
-const { redactForUser } = require("../../lib/game/view");
+const engines = require("../../lib/engines");
 const { withRefreshedTtl } = require("../../lib/matches");
 const { recordMatchCompletion, recordRoundCompletion } = require("../../lib/stats");
 
@@ -24,7 +23,7 @@ exports.handler = withAuth(async (event, { userId }) => {
 
     let next;
     try {
-      next = applyAction(match, userId, body);
+      next = engines.applyAction(match, userId, body);
     } catch (err) {
       return badRequest(err.message);
     }
@@ -54,7 +53,7 @@ exports.handler = withAuth(async (event, { userId }) => {
     }
     if (roundJustFinalized) await recordRoundCompletion(nextWithTtl);
     if (shouldRecordStats) await recordMatchCompletion(nextWithTtl);
-    return ok(redactForUser(nextWithTtl, userId));
+    return ok(engines.redactForUser(nextWithTtl, userId));
   } catch (err) {
     console.error(err);
     return serverError();

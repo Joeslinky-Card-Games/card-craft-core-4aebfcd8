@@ -4,7 +4,7 @@ const { ddb, tables } = require("../../lib/dynamo");
 const { ok, badRequest, forbidden, notFound, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { withRefreshedTtl, ttlForStatus } = require("../../lib/matches");
-const { redactForUser } = require("../../lib/game/view");
+const engines = require("../../lib/engines");
 
 /**
  * "Play again" vote at the end of a completed match. Adds the caller to
@@ -101,7 +101,7 @@ exports.handler = withAuth(async (event, { userId }) => {
         throw err;
       }
     }
-    return ok(redactForUser(item, userId));
+    return ok(engines.redactForUser(item, userId));
   } catch (err) {
     console.error(err);
     return serverError();
