@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { JoinDialog } from "@/components/lobby/JoinDialog";
 import { GameMenuDialog } from "@/components/lobby/GameMenuDialog";
 import { RuntimeChip } from "@/components/lobby/RuntimeChip";
+import { MyTableRow } from "@/components/lobby/MyTableRow";
 
 export const Route = createFileRoute("/_authenticated/lobby")({
   head: () => ({
