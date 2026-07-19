@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { endpoints, useApi, type Game, type StatRow } from "@/lib/api";
 
@@ -9,6 +9,14 @@ export function Leaderboard({ games }: Props) {
   const [gameId, setGameId] = useState<string>(availableGames[0]?.id ?? "");
   const api = useApi();
   const qc = useQueryClient();
+
+  useEffect(() => {
+    if (availableGames.length === 0) return;
+    if (!gameId || !availableGames.some((g) => g.id === gameId)) {
+      setGameId(availableGames[0].id);
+    }
+  }, [availableGames, gameId]);
+
   const backfill = useMutation({
     mutationFn: () =>
       api<{ scanned: number; roundsBackfilled: number; matchesBackfilled: number }>(
