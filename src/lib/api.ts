@@ -97,6 +97,15 @@ export type MatchView = Match & {
   winner?: string;
   chatMessages?: ChatMessage[];
   playAgain?: string[];
+  // ---- Stack Attack ----
+  stocks?: Record<string, string[]>;
+  stockCounts?: Record<string, number>;
+  stockTops?: Record<string, string | null>;
+  discards?: Record<string, string[][]>;
+  buildPiles?: { card: string; asRank: number }[][];
+  drawPileCount?: number;
+  archiveCount?: number;
+  completedCount?: number;
   // eslint-disable-next-line @typescript-eslint/naming-convention
   _order?: string[];
 };
