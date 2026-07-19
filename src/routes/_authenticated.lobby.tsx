@@ -8,6 +8,7 @@ import { MOCK_GAMES } from "@/lib/mock-games";
 import { Button } from "@/components/ui/button";
 import { CreateTableDialog } from "@/components/lobby/CreateTableDialog";
 import { JoinDialog } from "@/components/lobby/JoinDialog";
+import { Leaderboard } from "@/components/lobby/Leaderboard";
 
 export const Route = createFileRoute("/_authenticated/lobby")({
   head: () => ({
@@ -166,6 +167,8 @@ function LobbyPage() {
             </ul>
           </section>
         )}
+
+        <Leaderboard games={games} />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((game) => (
