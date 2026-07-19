@@ -32,8 +32,10 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
       .map((r) => {
         const gamesPlayed = r.gamesPlayed ?? 0;
         const gamesWon = r.gamesWon ?? 0;
+        const totalPoints = r.totalPoints ?? 0;
+        const avgPoints = gamesPlayed > 0 ? totalPoints / gamesPlayed : null;
         const winRate = gamesPlayed > 0 ? gamesWon / gamesPlayed : 0;
-        return { ...r, gamesPlayed, gamesWon, winRate };
+        return { ...r, gamesPlayed, gamesWon, totalPoints, avgPoints, winRate };
       })
       .sort(
         (a, b) =>
@@ -50,7 +52,7 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Leaderboard</h2>
-          <p className="text-xs text-muted-foreground">Ranked by game wins.</p>
+          <p className="text-xs text-muted-foreground">Ranked by game wins. Avg points per game shown as a handicap (lower is better).</p>
         </div>
         <div className="flex items-center gap-2">
           {!fixedGameId && availableGames.length > 1 && (
@@ -81,6 +83,7 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
                 <th className="py-2 pr-2 text-right font-medium">Games</th>
                 <th className="py-2 pr-2 text-right font-medium">Wins</th>
                 <th className="py-2 pr-2 text-right font-medium">Win rate</th>
+                <th className="py-2 pr-2 text-right font-medium">Avg pts</th>
               </tr>
             </thead>
             <tbody>
@@ -92,6 +95,9 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
                   <td className="py-2 pr-2 text-right tabular-nums">{r.gamesWon}</td>
                   <td className="py-2 pr-2 text-right tabular-nums">
                     {(r.winRate * 100).toFixed(0)}%
+                  </td>
+                  <td className="py-2 pr-2 text-right tabular-nums">
+                    {r.avgPoints == null ? "—" : r.avgPoints.toFixed(1)}
                   </td>
                 </tr>
               ))}
