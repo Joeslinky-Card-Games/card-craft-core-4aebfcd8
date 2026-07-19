@@ -21,6 +21,7 @@ import {
 import { estimateRuntime, formatDuration } from "@/lib/format";
 import { useClerkIdentity } from "@/lib/identity";
 import { CreateTableDialog } from "@/components/lobby/CreateTableDialog";
+import { MyTableRow } from "@/components/lobby/MyTableRow";
 import { Leaderboard } from "@/components/lobby/Leaderboard";
 import { RulesContent } from "@/components/game/RulesDialog";
 
@@ -128,30 +129,15 @@ export function GameMenuDialog({
                       <h3 className="mb-2 text-sm font-semibold">Your tables</h3>
                       <ul className="divide-y divide-border rounded-md border border-border">
                         {gameTables.map((m) => (
-                          <li key={m.matchId} className="flex items-center justify-between px-3 py-2 text-sm">
-                            <div>
-                              <div className="font-medium">
-                                {m.status}
-                                {m.code && (
-                                  <span className="ml-2 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] tracking-widest text-muted-foreground">
-                                    {m.code}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {m.players.length}/{m.maxPlayers} players
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                onOpenChange(false);
-                                navigate({ to: "/match/$matchId", params: { matchId: m.matchId } });
-                              }}
-                            >
-                              Rejoin
-                            </Button>
-                          </li>
+                          <MyTableRow
+                            key={m.matchId}
+                            match={m}
+                            showGameName={false}
+                            onRejoin={() => {
+                              onOpenChange(false);
+                              navigate({ to: "/match/$matchId", params: { matchId: m.matchId } });
+                            }}
+                          />
                         ))}
                       </ul>
                     </div>

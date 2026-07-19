@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { JoinDialog } from "@/components/lobby/JoinDialog";
 import { GameMenuDialog } from "@/components/lobby/GameMenuDialog";
 import { RuntimeChip } from "@/components/lobby/RuntimeChip";
+import { MyTableRow } from "@/components/lobby/MyTableRow";
 
 export const Route = createFileRoute("/_authenticated/lobby")({
   head: () => ({
@@ -127,32 +128,12 @@ function LobbyPage() {
               {myMatches.map((m) => {
                 const gameName = games.find((g) => g.id === m.gameId)?.name ?? m.gameId;
                 return (
-                  <li key={m.matchId} className="flex items-center justify-between px-4 py-3 text-sm">
-                    <div>
-                      <div className="font-medium">
-                        {gameName}
-                        {m.visibility === "private" && (
-                          <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-500">
-                            Private
-                          </span>
-                        )}
-                          {m.code && (
-                            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] tracking-widest text-muted-foreground">
-                              {m.code}
-                            </span>
-                          )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {m.status} · {m.players.length}/{m.maxPlayers} players · created {new Date(m.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => navigate({ to: "/match/$matchId", params: { matchId: m.matchId } })}
-                    >
-                      Rejoin
-                    </Button>
-                  </li>
+                  <MyTableRow
+                    key={m.matchId}
+                    match={m}
+                    gameName={gameName}
+                    onRejoin={() => navigate({ to: "/match/$matchId", params: { matchId: m.matchId } })}
+                  />
                 );
               })}
             </ul>
