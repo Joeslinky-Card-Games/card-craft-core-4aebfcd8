@@ -37,17 +37,16 @@ export function Leaderboard({ games }: Props) {
     const items = (q.data?.leaderboard ?? []) as StatRow[];
     return items
       .map((r) => {
-        const roundsPlayed = r.roundsPlayed ?? 0;
-        const roundsWon = r.roundsWon ?? 0;
+        const gamesPlayed = r.gamesPlayed ?? 0;
         const gamesWon = r.gamesWon ?? 0;
-        const winRate = roundsPlayed > 0 ? roundsWon / roundsPlayed : 0;
-        return { ...r, roundsPlayed, roundsWon, gamesWon, winRate };
+        const winRate = gamesPlayed > 0 ? gamesWon / gamesPlayed : 0;
+        return { ...r, gamesPlayed, gamesWon, winRate };
       })
       .sort(
         (a, b) =>
-          b.roundsWon - a.roundsWon ||
           b.gamesWon - a.gamesWon ||
-          b.winRate - a.winRate
+          b.winRate - a.winRate ||
+          b.gamesPlayed - a.gamesPlayed
       );
   }, [q.data]);
 
@@ -58,7 +57,7 @@ export function Leaderboard({ games }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Leaderboard</h2>
-          <p className="text-xs text-muted-foreground">Ranked by round wins.</p>
+          <p className="text-xs text-muted-foreground">Ranked by game wins.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -94,16 +93,15 @@ export function Leaderboard({ games }: Props) {
         {q.isLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No rounds played yet. Be the first!</p>
+          <p className="text-sm text-muted-foreground">No games played yet. Be the first!</p>
         ) : (
           <table className="w-full min-w-[420px] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="py-2 pr-2 font-medium">#</th>
                 <th className="py-2 pr-2 font-medium">Player</th>
-                <th className="py-2 pr-2 text-right font-medium">Rounds</th>
-                <th className="py-2 pr-2 text-right font-medium">Round wins</th>
-                <th className="py-2 pr-2 text-right font-medium">Game wins</th>
+                <th className="py-2 pr-2 text-right font-medium">Games</th>
+                <th className="py-2 pr-2 text-right font-medium">Wins</th>
                 <th className="py-2 pr-2 text-right font-medium">Win rate</th>
               </tr>
             </thead>
@@ -112,8 +110,7 @@ export function Leaderboard({ games }: Props) {
                 <tr key={r.userId} className="border-b border-border/50 last:border-0">
                   <td className="py-2 pr-2 text-muted-foreground">{i + 1}</td>
                   <td className="py-2 pr-2 font-medium">{r.username ?? r.userId.slice(-6)}</td>
-                  <td className="py-2 pr-2 text-right tabular-nums">{r.roundsPlayed}</td>
-                  <td className="py-2 pr-2 text-right tabular-nums">{r.roundsWon}</td>
+                  <td className="py-2 pr-2 text-right tabular-nums">{r.gamesPlayed}</td>
                   <td className="py-2 pr-2 text-right tabular-nums">{r.gamesWon}</td>
                   <td className="py-2 pr-2 text-right tabular-nums">
                     {(r.winRate * 100).toFixed(0)}%
