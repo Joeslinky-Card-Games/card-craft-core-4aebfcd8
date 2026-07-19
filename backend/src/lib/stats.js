@@ -1,4 +1,4 @@
-const { UpdateCommand } = require("@aws-sdk/lib-dynamodb");
+const { GetCommand, UpdateCommand } = require("@aws-sdk/lib-dynamodb");
 const { ddb, tables } = require("./dynamo");
 
 const CANONICAL_GAME_IDS = {
@@ -81,6 +81,56 @@ async function recordRoundsBackfill(match, rounds) {
   );
 }
 
+// Idempotent repair/backfill helper. It raises a leaderboard row to at least
+// the totals reconstructed from match records without decrementing any live
+// stats that may already include deleted/expired matches.
+async function raiseStatsToFloor(userId, gameId, totals, username) {
+  if (!userId || !gameId || !totals) return null;
+  const currentRes = await ddb.send(
+    new GetCommand({ TableName: tables.stats, Key: { userId, gameId } })
+  );
+  const current = currentRes.Item || {};
+  const currentRoundsPlayed = Number(current.roundsPlayed || 0);
+  const currentRoundsWon = Number(current.roundsWon || 0);
+  const currentGamesPlayed = Number(current.gamesPlayed || 0);
+  const currentGamesWon = Number(current.gamesWon || 0);
+  const currentRating = Number(current.rating || current.roundsWon || 0);
+
+  const roundsPlayedDelta = Math.max(0, Number(totals.roundsPlayed || 0) - currentRoundsPlayed);
+  const roundsWonDelta = Math.max(0, Number(totals.roundsWon || 0) - currentRoundsWon);
+  const gamesPlayedDelta = Math.max(0, Number(totals.gamesPlayed || 0) - currentGamesPlayed);
+  const gamesWonDelta = Math.max(0, Number(totals.gamesWon || 0) - currentGamesWon);
+  const ratingDelta = Math.max(0, Number(totals.roundsWon || 0) - currentRating);
+
+  await ddb.send(
+    new UpdateCommand({
+      TableName: tables.stats,
+      Key: { userId, gameId },
+      UpdateExpression:
+        "SET roundsPlayed = if_not_exists(roundsPlayed, :zero) + :roundsPlayedDelta, roundsWon = if_not_exists(roundsWon, :zero) + :roundsWonDelta, gamesPlayed = if_not_exists(gamesPlayed, :zero) + :gamesPlayedDelta, gamesWon = if_not_exists(gamesWon, :zero) + :gamesWonDelta, rating = if_not_exists(rating, :zero) + :ratingDelta, username = :name, updatedAt = :now",
+      ExpressionAttributeValues: {
+        ":zero": 0,
+        ":roundsPlayedDelta": roundsPlayedDelta,
+        ":roundsWonDelta": roundsWonDelta,
+        ":gamesPlayedDelta": gamesPlayedDelta,
+        ":gamesWonDelta": gamesWonDelta,
+        ":ratingDelta": ratingDelta,
+        ":name": username || String(userId).slice(-12),
+        ":now": new Date().toISOString(),
+      },
+    })
+  );
+
+  return {
+    userId,
+    gameId,
+    roundsPlayedDelta,
+    roundsWonDelta,
+    gamesPlayedDelta,
+    gamesWonDelta,
+  };
+}
+
 // Called exactly once per completed match (guarded by match.statsRecorded).
 async function recordMatchCompletion(match) {
   if (!match || match.status !== "complete") return;
@@ -110,4 +160,10 @@ async function recordMatchCompletion(match) {
   );
 }
 
-module.exports = { recordMatchCompletion, recordRoundCompletion, recordRoundsBackfill, gameIdForStats };
+module.exports = {
+  recordMatchCompletion,
+  recordRoundCompletion,
+  recordRoundsBackfill,
+  raiseStatsToFloor,
+  gameIdForStats,
+};
