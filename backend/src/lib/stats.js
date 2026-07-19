@@ -49,6 +49,38 @@ async function recordRoundCompletion(match) {
   );
 }
 
+// Backfill helper: credit every human in the match with `roundsPlayed`
+// increments equal to the total rounds actually played, and +1 roundsWon
+// for the final-round winner (per-round history isn't persisted, so
+// earlier round winners can't be reconstructed).
+async function recordRoundsBackfill(match, rounds) {
+  if (!match || !rounds || rounds <= 0) return;
+  const gameId = gameIdForStats(match);
+  const usernames = match.usernames || {};
+  const humans = (match.players || []).filter(isHuman);
+  const winner = match.goneOutBy;
+  await Promise.all(
+    humans.map((userId) => {
+      const won = userId === winner ? 1 : 0;
+      return ddb.send(
+        new UpdateCommand({
+          TableName: tables.stats,
+          Key: { userId, gameId },
+          UpdateExpression:
+            "SET roundsPlayed = if_not_exists(roundsPlayed, :zero) + :rounds, roundsWon = if_not_exists(roundsWon, :zero) + :won, rating = if_not_exists(rating, :zero) + :won, username = :name, updatedAt = :now",
+          ExpressionAttributeValues: {
+            ":zero": 0,
+            ":rounds": rounds,
+            ":won": won,
+            ":name": usernameFor(userId, usernames),
+            ":now": new Date().toISOString(),
+          },
+        })
+      );
+    })
+  );
+}
+
 // Called exactly once per completed match (guarded by match.statsRecorded).
 async function recordMatchCompletion(match) {
   if (!match || match.status !== "complete") return;
@@ -78,4 +110,4 @@ async function recordMatchCompletion(match) {
   );
 }
 
-module.exports = { recordMatchCompletion, recordRoundCompletion, gameIdForStats };
+module.exports = { recordMatchCompletion, recordRoundCompletion, recordRoundsBackfill, gameIdForStats };
