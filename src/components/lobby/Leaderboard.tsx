@@ -2,18 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { endpoints, type Game, type StatRow } from "@/lib/api";
 
-type Props = { games: Game[] };
+type Props = { games: Game[]; gameId?: string };
 
-export function Leaderboard({ games }: Props) {
+export function Leaderboard({ games, gameId: fixedGameId }: Props) {
   const availableGames = games.filter((g) => g.status === "available");
-  const [gameId, setGameId] = useState<string>(availableGames[0]?.id ?? "");
+  const [gameId, setGameId] = useState<string>(fixedGameId ?? availableGames[0]?.id ?? "");
 
   useEffect(() => {
+    if (fixedGameId) {
+      if (gameId !== fixedGameId) setGameId(fixedGameId);
+      return;
+    }
     if (availableGames.length === 0) return;
     if (!gameId || !availableGames.some((g) => g.id === gameId)) {
       setGameId(availableGames[0].id);
     }
-  }, [availableGames, gameId]);
+  }, [availableGames, gameId, fixedGameId]);
 
   const q = useQuery({
     queryKey: ["leaderboard", gameId],
@@ -49,7 +53,7 @@ export function Leaderboard({ games }: Props) {
           <p className="text-xs text-muted-foreground">Ranked by game wins.</p>
         </div>
         <div className="flex items-center gap-2">
-          {availableGames.length > 1 && (
+          {!fixedGameId && availableGames.length > 1 && (
             <select
               value={gameId}
               onChange={(e) => setGameId(e.target.value)}
