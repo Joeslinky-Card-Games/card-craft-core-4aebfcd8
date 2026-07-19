@@ -158,6 +158,25 @@ Resources:
             Method: GET
             Path: /matches/mine
 
+  BackfillStatsFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/matches/backfill-stats.handler
+      Timeout: 60
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StatsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /matches/backfill-stats
+
   CreateMatchFn:
     Type: AWS::Serverless::Function
     Properties:
