@@ -138,19 +138,22 @@ async function recordMatchCompletion(match) {
   const winner = match.winner;
   const usernames = match.usernames || {};
   const humans = (match.players || []).filter(isHuman);
+  const scores = match.scores || {};
   await Promise.all(
     humans.map((userId) => {
       const won = userId === winner ? 1 : 0;
+      const points = Number(scores[userId] || 0);
       return ddb.send(
         new UpdateCommand({
           TableName: tables.stats,
           Key: { userId, gameId },
           UpdateExpression:
-            "SET gamesPlayed = if_not_exists(gamesPlayed, :zero) + :one, gamesWon = if_not_exists(gamesWon, :zero) + :won, rating = if_not_exists(rating, :zero), username = :name, updatedAt = :now",
+            "SET gamesPlayed = if_not_exists(gamesPlayed, :zero) + :one, gamesWon = if_not_exists(gamesWon, :zero) + :won, totalPoints = if_not_exists(totalPoints, :zero) + :points, rating = if_not_exists(rating, :zero), username = :name, updatedAt = :now",
           ExpressionAttributeValues: {
             ":zero": 0,
             ":one": 1,
             ":won": won,
+            ":points": points,
             ":name": usernameFor(userId, usernames),
             ":now": new Date().toISOString(),
           },
