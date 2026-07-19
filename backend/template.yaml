@@ -431,6 +431,23 @@ Resources:
             Method: GET
             Path: /stats/leaderboard
 
+  StatsDumpFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/stats/dump.handler
+      Timeout: 30
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref StatsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /stats/dump
+
 Outputs:
   ApiUrl:
     Description: HTTP API invoke URL
