@@ -1533,11 +1533,13 @@ function SortableCard({
   id,
   wildRank,
   index,
+  size,
   onClick,
 }: {
   id: string;
   wildRank: string | null;
   index?: number;
+  size?: "sm" | "md" | "lg";
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -1551,7 +1553,7 @@ function SortableCard({
   };
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <PlayingCard id={id} wildRank={wildRank} onClick={onClick} />
+      <PlayingCard id={id} wildRank={wildRank} size={size} onClick={onClick} />
     </div>
   );
 }
