@@ -72,6 +72,21 @@ function avatarHue(userId: string): number {
 
 function MatchPage() {
   const { matchId } = Route.useParams();
+  const api = useApi();
+  const peek = useQuery({
+    queryKey: ["match", matchId],
+    queryFn: () => api<MatchView>(`/matches/${matchId}`),
+    refetchInterval: 2000,
+    enabled: Boolean(matchId),
+  });
+  const gameId = peek.data?.gameId;
+  if (gameId === "stack-attack") {
+    return <StackAttackMatch matchId={matchId} />;
+  }
+  return <CharlottesWebMatchInner matchId={matchId} />;
+}
+
+function CharlottesWebMatchInner({ matchId }: { matchId: string }) {
   const { user } = useUser();
   const userId = user?.id ?? "";
   const selfImage = user?.imageUrl ?? null;
