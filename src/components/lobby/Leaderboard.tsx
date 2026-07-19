@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { endpoints, useApi, type Game, type StatRow } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { endpoints, type Game, type StatRow } from "@/lib/api";
 
 type Props = { games: Game[] };
 
 export function Leaderboard({ games }: Props) {
   const availableGames = games.filter((g) => g.status === "available");
   const [gameId, setGameId] = useState<string>(availableGames[0]?.id ?? "");
-  const api = useApi();
-  const qc = useQueryClient();
 
   useEffect(() => {
     if (availableGames.length === 0) return;
