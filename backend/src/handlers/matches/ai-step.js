@@ -6,7 +6,7 @@ const { applyAction, currentPlayer } = require("../../lib/game/engine");
 const { chooseAction } = require("../../lib/game/ai");
 const { redactForUser } = require("../../lib/game/view");
 const { withRefreshedTtl } = require("../../lib/matches");
-const { recordMatchCompletion } = require("../../lib/stats");
+const { recordMatchCompletion, recordRoundCompletion } = require("../../lib/stats");
 
 // Advances the match by ONE bot action if it's currently an AI's turn.
 // The client polls this endpoint on a small delay to make bot play feel
@@ -38,6 +38,10 @@ exports.handler = withAuth(async (event, { userId }) => {
       return badRequest(err.message);
     }
     const nextWithTtl = withRefreshedTtl(next);
+    const roundJustFinalized =
+      (nextWithTtl.status === "round-complete" || nextWithTtl.status === "complete") &&
+      (match.roundsRecordedThrough ?? 0) < nextWithTtl.round;
+    if (roundJustFinalized) nextWithTtl.roundsRecordedThrough = nextWithTtl.round;
     const shouldRecordStats =
       nextWithTtl.status === "complete" && !match.statsRecorded;
     if (shouldRecordStats) nextWithTtl.statsRecorded = true;
@@ -58,6 +62,7 @@ exports.handler = withAuth(async (event, { userId }) => {
       }
       throw err;
     }
+    if (roundJustFinalized) await recordRoundCompletion(nextWithTtl);
     if (shouldRecordStats) await recordMatchCompletion(nextWithTtl);
     return ok(redactForUser(nextWithTtl, userId));
   } catch (err) {

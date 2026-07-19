@@ -130,6 +130,8 @@ export type StatRow = {
   losses?: number;
   gamesPlayed?: number;
   gamesWon?: number;
+  roundsPlayed?: number;
+  roundsWon?: number;
   updatedAt?: string;
 };
 
