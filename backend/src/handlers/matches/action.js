@@ -5,6 +5,7 @@ const { withAuth } = require("../../lib/auth");
 const engines = require("../../lib/engines");
 const { withRefreshedTtl } = require("../../lib/matches");
 const { recordMatchCompletion, recordRoundCompletion } = require("../../lib/stats");
+const { recordCompletedMatch } = require("../../lib/runtime-stats");
 
 exports.handler = withAuth(async (event, { userId }) => {
   const matchId = event.pathParameters?.matchId;
@@ -36,6 +37,12 @@ exports.handler = withAuth(async (event, { userId }) => {
     const shouldRecordStats =
       nextWithTtl.status === "complete" && !match.statsRecorded;
     if (shouldRecordStats) nextWithTtl.statsRecorded = true;
+    if (nextWithTtl.status === "complete" && !nextWithTtl.completedAt) {
+      nextWithTtl.completedAt = new Date().toISOString();
+    }
+    const shouldRecordRuntime =
+      nextWithTtl.status === "complete" && !match.runtimeRecorded;
+    if (shouldRecordRuntime) nextWithTtl.runtimeRecorded = true;
     try {
       await ddb.send(
         new PutCommand({
@@ -53,6 +60,7 @@ exports.handler = withAuth(async (event, { userId }) => {
     }
     if (roundJustFinalized) await recordRoundCompletion(nextWithTtl);
     if (shouldRecordStats) await recordMatchCompletion(nextWithTtl);
+    if (shouldRecordRuntime) await recordCompletedMatch(nextWithTtl);
     return ok(engines.redactForUser(nextWithTtl, userId));
   } catch (err) {
     console.error(err);

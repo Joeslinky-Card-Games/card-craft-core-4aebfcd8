@@ -1,14 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useUser } from "@clerk/tanstack-react-start";
-import { API_URL, apiFetch, endpoints, useApi, type CreateMatchPayload, type Game, type Match } from "@/lib/api";
+import { API_URL, apiFetch, endpoints, useApi, type Game, type Match } from "@/lib/api";
 import { useClerkIdentity } from "@/lib/identity";
 import { MOCK_GAMES } from "@/lib/mock-games";
 import { Button } from "@/components/ui/button";
-import { CreateTableDialog } from "@/components/lobby/CreateTableDialog";
 import { JoinDialog } from "@/components/lobby/JoinDialog";
-import { Leaderboard } from "@/components/lobby/Leaderboard";
+import { GameMenuDialog } from "@/components/lobby/GameMenuDialog";
+import { RuntimeChip } from "@/components/lobby/RuntimeChip";
 
 export const Route = createFileRoute("/_authenticated/lobby")({
   head: () => ({
@@ -22,12 +22,11 @@ export const Route = createFileRoute("/_authenticated/lobby")({
 
 function LobbyPage() {
   const api = useApi();
-  const qc = useQueryClient();
   const navigate = useNavigate();
   const { user } = useUser();
   const userId = user?.id ?? "";
   const identity = useClerkIdentity();
-  const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  const [menuGameId, setMenuGameId] = useState<string | null>(null);
   const [joinOpen, setJoinOpen] = useState(false);
 
   const gamesQuery = useQuery({
@@ -47,20 +46,12 @@ function LobbyPage() {
     minPlayers: 2, maxPlayers: 4, status: g.status,
   }));
 
-  const createMut = useMutation({
-    mutationFn: (payload: CreateMatchPayload) =>
-      api<Match>("/matches", { method: "POST", body: { ...identity, ...payload } }),
-    onSuccess: (m) => {
-      qc.invalidateQueries({ queryKey: ["matches", "mine"] });
-      setSelectedGame(null);
-      navigate({ to: "/match/$matchId", params: { matchId: m.matchId } });
-    },
-  });
-
   const myMatches = myMatchesQuery.data?.matches ?? [];
-  const activeGame = games.find((g) => g.id === selectedGame) ?? null;
-  // Silence unused-import warning for apiFetch (kept for symmetry with older code).
+  const activeGame = games.find((g) => g.id === menuGameId) ?? null;
+  // Silence unused-import warnings for symmetry.
   void apiFetch;
+  void api;
+  void identity;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -168,13 +159,14 @@ function LobbyPage() {
           </section>
         )}
 
-        <Leaderboard games={games} />
-
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((game) => (
-            <div
+            <button
               key={game.id}
-              className="flex flex-col justify-between rounded-lg border border-border bg-card/80 p-6 shadow-sm backdrop-blur-sm transition-colors hover:border-primary/40 hover:bg-card"
+              type="button"
+              onClick={() => game.status === "available" && setMenuGameId(game.id)}
+              disabled={game.status !== "available"}
+              className="group flex flex-col justify-between rounded-lg border border-border bg-card/80 p-6 text-left shadow-sm backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-card hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-border disabled:hover:bg-card/80 disabled:hover:shadow-sm"
             >
               <div>
                 <div className="flex items-center justify-between">
@@ -186,35 +178,32 @@ function LobbyPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{game.description}</p>
-              </div>
-              <div className="mt-6">
-                {game.status === "available" ? (
-                  <button
-                    onClick={() => setSelectedGame(game.id)}
-                    className="w-full rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
-                  >
-                    Create table
-                  </button>
-                ) : (
-                  <button
-                    disabled
-                    className="w-full cursor-not-allowed rounded-md border border-dashed border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
-                  >
-                    Coming soon
-                  </button>
+                {game.status === "available" && (
+                  <div className="mt-3">
+                    <RuntimeChip gameId={game.id} />
+                  </div>
                 )}
               </div>
-            </div>
+              <div className="mt-6 text-sm">
+                {game.status === "available" ? (
+                  <span className="inline-flex items-center gap-1 text-primary group-hover:underline">
+                    Open menu →
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Coming soon</span>
+                )}
+              </div>
+            </button>
           ))}
         </div>
 
-        <CreateTableDialog
+        <GameMenuDialog
           game={activeGame}
-          open={Boolean(selectedGame)}
-          onOpenChange={(v) => { if (!v) setSelectedGame(null); }}
-          onSubmit={(payload) => createMut.mutate(payload)}
-          pending={createMut.isPending}
-          error={createMut.error instanceof Error ? createMut.error.message : null}
+          open={Boolean(menuGameId)}
+          onOpenChange={(v) => { if (!v) setMenuGameId(null); }}
+          games={games}
+          myMatches={myMatches}
+          onJoinTable={() => setJoinOpen(true)}
         />
 
         <JoinDialog

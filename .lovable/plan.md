@@ -1,72 +1,73 @@
-## Scope
+# Average runtime + lobby redesign
 
-1. **Remove Backfill button** from the Leaderboard UI (keep the endpoint, just hide the control).
-2. **Confirm leaderboards are per-game** — the Leaderboard already queries by `gameId`; verify the lobby switches it when the selected game changes and each game gets its own ranking.
-3. **Add a Skip-Bo–style game** — new game entry in the catalog, new game engine, new match view, wired into the existing lobby/match flow.
+Two connected changes: (1) track how long completed matches actually take and expose an average per game + player count; (2) turn the lobby into a set of game tiles that open a per-game menu (info, leaderboard, create, join).
 
-## Naming & branding
+## 1. Backend — runtime tracking
 
-Rename the game to **"Stack Attack"** (Skip-Bo clone, distinct name).
-Wild cards renamed **"WILD"** badges (not "SKIP-BO").
+**Capture start/end timestamps on the match record.**
+- `backend/src/handlers/matches/start.js`: set `startedAt = new Date().toISOString()` when transitioning `open → in-progress`.
+- `backend/src/handlers/matches/play-again.js`: same, since it rehydrates the match.
+- Wherever a match transitions to `status === "complete"` (action.js, next-round.js, ai-step.js), stamp `completedAt` before the final Put. Guard with `!match.completedAt` so we don't overwrite.
 
-## Card design
+**Aggregate into the existing `stats` table under a special key.**
+- Add `backend/src/lib/runtime-stats.js` with `recordCompletedMatch(match)` that:
+  - Skips if no `startedAt`/`completedAt`.
+  - Computes `durationMs = completedAt - startedAt`, `players = match.players.length`.
+  - Uses a fixed synthetic userId like `__runtime__` with `gameId = match.gameId` as the stats row, and an inner map keyed by player count: `byPlayers.{n}.totalMs`, `byPlayers.{n}.count`. Update with `ADD` expressions.
+- Call it once from the same spot that already invokes `recordMatchCompletion` in `action.js`, `next-round.js`, `ai-step.js`.
+- Extend `backfill-stats.js` similarly (only for matches that have `startedAt`+`completedAt`; older matches will just be skipped).
 
-Custom Stack Attack card face — different from the rummy playing-card face:
-- Rounded-square face, thick 2-color border, oversized centered numeral (1–12).
-- Numerals in a heavy geometric display font (Space Grotesk / Bricolage) with a subtle drop-shadow.
-- Each number tier gets a color band (1–4 teal, 5–8 amber, 9–12 magenta) so stacks read at a glance.
-- Wild card: holographic gradient face with a "★ WILD" wordmark and no number.
-- Card back: dark navy with a diagonal stripe motif and small "SA" monogram.
+**New endpoint `GET /games/{gameId}/runtime`.**
+- `backend/src/handlers/games/runtime.js`: reads the `__runtime__` row for that gameId and returns `{ gameId, byPlayers: { "2": { avgMs, count }, ... }, overallAvgMs, totalCount }`.
+- Wire route in `backend/template.yaml`.
 
-## Game rules (Stack Attack)
+## 2. Frontend — data + types
 
-- 162-card deck: 12 copies of each rank 1–12 + 18 Wilds.
-- 2–6 players. Each player deals a **Stockpile** of 20 (2p) / 15 (3–4p) / 10 (5–6p) cards, top card face-up.
-- On your turn: draw up to 5 cards in hand. Play cards onto shared **Build piles** in strict 1→12 sequence (Wild = any next value). Play from hand, stockpile top, or your 4 personal **Discard piles**. Completed 1–12 build pile is cleared back to a completed pile. Turn ends by discarding one card from hand onto any of your 4 discard piles.
-- First to empty their Stockpile wins the round; match = configurable rounds (default 1).
+- `src/lib/api.ts`: add `RuntimeStats` type and `endpoints.runtime(gameId)`.
+- Helper `formatDuration(ms, playerCount?)` in a small util that picks the closest player-count bucket (exact match, else nearest with data, else overall) and returns e.g. `"~18 min"`.
 
-## Backend changes
+## 3. Frontend — lobby redesign
 
-- `backend/src/lib/games.js`: add `stack-attack` entry, `status: "available"`.
-- New engine module `backend/src/lib/stackattack/` with:
-  - `deck.js` – build/shuffle 162-card deck (uses existing `mulberry32`).
-  - `engine.js` – `createMatch`, `startRound`, `applyAction` (play-from-hand/stock/discard, end-turn, draw-refill), win detection.
-  - `view.js` – per-player redaction (hide opponents' hand + face-down stock body, show stock-top + discard tops + build piles + counts).
-  - `ai.js` – basic greedy bot (prefer stock-top plays, then discard-top, then hand; discard non-wilds to balanced piles).
-- Route the existing match handlers (`create`, `action`, `ai-step`, `view`, `next-round`, `play-again`) through a per-game dispatcher keyed on `match.gameId`; rummy code moves untouched behind the dispatcher.
-- Stats: reuse `stats.js` — record `gamesPlayed`/`gamesWon` per `gameId` so leaderboards stay separate.
+Rework `src/routes/_authenticated.lobby.tsx`:
 
-## Frontend changes
+- Top of page: greeting + "Join by code" button (unchanged) + "Your tables" list (unchanged).
+- Remove the standalone `<Leaderboard />` block from the lobby.
+- Games grid becomes the primary content. Each card shows:
+  - Game name, short description
+  - Player range
+  - Estimated runtime chip (`~18 min · 4 players` — falls back to `"—"` when no data)
+  - Status badge (available / coming soon)
+  - Click behavior: available → open `GameMenuDialog`; coming-soon → disabled.
 
-- Lobby: existing game picker already lists catalog entries; Stack Attack becomes selectable when `status === "available"`. Leaderboard already re-queries on `gameId` change — no change needed once #1 is done.
-- New route `src/routes/_authenticated.match.$matchId.tsx` currently branches on rummy; introduce a game-typed router component that renders either the existing rummy `MatchView` or a new `StackAttackView`.
-- New components under `src/components/stackattack/`:
-  - `Card.tsx` – card face using the design above (semantic tokens for the 3 tier colors + wild gradient added to `src/styles.css`).
-  - `BuildPile.tsx`, `DiscardPile.tsx`, `Stockpile.tsx`, `Hand.tsx`.
-  - `StackAttackView.tsx` – table layout: 4 build piles centered, seats around, own hand + 4 discard piles + stockpile at bottom.
-- Reuse existing chat, rules dialog (rewritten copy), play-again voting, seating logic.
+New component `src/components/lobby/GameMenuDialog.tsx` (shadcn `Dialog`):
+- Header: game name, description, player range, avg runtime.
+- Tabs (shadcn `Tabs`): **Play** | **Leaderboard** | **How to play**.
+  - **Play**: two big actions — "Create table" (opens existing `CreateTableDialog`) and "Join table" (opens existing `JoinDialog` prefiltered to this game). Also shows any of the user's active tables for this game with a "Rejoin" button.
+  - **Leaderboard**: reuses existing `Leaderboard` component but locked to this `gameId` (add optional `gameId` prop that, when set, hides the picker).
+  - **How to play**: pulls text from the existing `RulesDialog` content. Refactor `RulesDialog` to export a `RulesContent({ gameId })` component; both the in-match dialog and this tab render it.
 
-## Files touched (high level)
+## 4. Files touched
 
 ```text
-backend/
-  src/lib/games.js                            (add stack-attack)
-  src/lib/stackattack/{deck,engine,view,ai}.js (new)
-  src/lib/matchDispatcher.js                  (new, routes by gameId)
-  src/handlers/matches/{create,action,ai-step,view,next-round,play-again}.js (dispatch)
-src/
-  styles.css                                  (stack-attack color tokens)
-  routes/_authenticated.match.$matchId.tsx    (game-typed router)
-  components/stackattack/*                    (new)
-  components/lobby/Leaderboard.tsx            (remove Backfill button)
-  components/game/RulesDialog.tsx             (per-game rules text)
+backend/src/handlers/matches/start.js          + startedAt
+backend/src/handlers/matches/play-again.js     + startedAt reset
+backend/src/handlers/matches/action.js         + completedAt + runtime record
+backend/src/handlers/matches/next-round.js     + completedAt + runtime record
+backend/src/handlers/matches/ai-step.js        + completedAt + runtime record
+backend/src/handlers/matches/backfill-stats.js + runtime backfill
+backend/src/handlers/games/runtime.js          NEW
+backend/src/lib/runtime-stats.js               NEW
+backend/template.yaml                          + route + function
+src/lib/api.ts                                 + runtime types/endpoint
+src/lib/format.ts                              NEW (formatDuration helper)
+src/components/lobby/GameMenuDialog.tsx        NEW
+src/components/lobby/Leaderboard.tsx           accept optional gameId prop
+src/components/game/RulesDialog.tsx            export RulesContent
+src/routes/_authenticated.lobby.tsx            redesigned around tiles
 ```
 
-## Not included
+## Notes / trade-offs
 
-- Fancy Skip-Bo tournament formats, chat moderation changes, mobile-only polish beyond what the layout naturally provides.
-- Deleting the backfill endpoint — only the UI button is hidden so you can still hit it manually if needed.
-
-## Open question
-
-Confirm the name **"Stack Attack"** works, or tell me another; I'll swap it before implementing.
+- Runtime aggregation uses a single synthetic stats row per game to avoid a new table. If you'd rather have its own DynamoDB table I can do that instead.
+- Old completed matches have no `startedAt`, so early averages will be based only on new games until backfill (which can only help matches that already had both timestamps — we can't invent them).
+- Player-count bucketing is exact match with a fallback to overall average, which keeps the UI honest when only some player counts have data.

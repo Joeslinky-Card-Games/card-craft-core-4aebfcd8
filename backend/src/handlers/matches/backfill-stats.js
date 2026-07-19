@@ -3,6 +3,7 @@ const { ddb, tables } = require("../../lib/dynamo");
 const { ok, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { gameIdForStats, raiseStatsToFloor, recordRoundsBackfill, recordMatchCompletion } = require("../../lib/stats");
+const { recordCompletedMatch } = require("../../lib/runtime-stats");
 
 function isHuman(playerId) {
   return typeof playerId === "string" && !playerId.startsWith("ai-");
@@ -89,6 +90,10 @@ exports.handler = withAuth(async () => {
           await recordMatchCompletion(match);
           match.statsRecorded = true;
           matchesBackfilled++;
+        }
+        if (match.status === "complete" && !match.runtimeRecorded && match.startedAt && match.completedAt) {
+          const recorded = await recordCompletedMatch(match);
+          if (recorded) match.runtimeRecorded = true;
         }
         await ddb.send(new PutCommand({ TableName: tables.matches, Item: match }));
         details.push({

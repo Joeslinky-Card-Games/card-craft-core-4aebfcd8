@@ -830,6 +830,7 @@ function GameView({
         open={rulesOpen}
         onOpenChange={setRulesOpen}
         onDontShowAgain={dontShowAgain}
+        gameId={match.gameId}
       />
       {goneOutAnnouncement && !roundComplete && !matchComplete && (
         <WentOutAnnouncement

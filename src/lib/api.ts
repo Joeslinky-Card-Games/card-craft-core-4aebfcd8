@@ -151,6 +151,15 @@ export const endpoints = {
     apiFetch<{ gameId: string; leaderboard: StatRow[] }>(
       `/stats/leaderboard?gameId=${encodeURIComponent(gameId)}`,
     ),
+  runtime: (gameId: string) =>
+    apiFetch<RuntimeStats>(`/games/${encodeURIComponent(gameId)}/runtime`),
+};
+
+export type RuntimeStats = {
+  gameId: string;
+  byPlayers: Record<string, { avgMs: number; count: number }>;
+  overallAvgMs: number | null;
+  totalCount: number;
 };
 
 export type CreateMatchPayload = {

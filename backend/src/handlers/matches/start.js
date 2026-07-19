@@ -24,6 +24,7 @@ exports.handler = withAuth(async (event, { userId }) => {
       ...match,
       ...dealt,
       version: expectedVersion + 1,
+      startedAt: match.startedAt || new Date().toISOString(),
     };
     next = withRefreshedTtl(next);
 
