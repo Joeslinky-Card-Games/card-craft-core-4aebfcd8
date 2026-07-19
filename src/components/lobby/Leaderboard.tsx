@@ -1,22 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { endpoints, useApi, type Game, type StatRow } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { endpoints, type Game, type StatRow } from "@/lib/api";
 
 type Props = { games: Game[]; gameId?: string };
 
 export function Leaderboard({ games, gameId: fixedGameId }: Props) {
   const availableGames = games.filter((g) => g.status === "available");
   const [gameId, setGameId] = useState<string>(fixedGameId ?? availableGames[0]?.id ?? "");
-  const api = useApi();
-  const qc = useQueryClient();
-  const backfill = useMutation({
-    mutationFn: () =>
-      api<{ scanned: number; roundsBackfilled: number; matchesBackfilled: number; statRowsRepaired: number }>(
-        "/matches/backfill-stats",
-        { method: "POST", body: {} },
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leaderboard"] }),
-  });
 
   useEffect(() => {
     if (fixedGameId) {
@@ -64,34 +54,18 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
           <h2 className="text-lg font-semibold">Leaderboard</h2>
           <p className="text-xs text-muted-foreground">Ranked by game wins. Avg points per game shown as a handicap (lower is better).</p>
         </div>
-        <div className="flex items-center gap-2">
-          {!fixedGameId && availableGames.length > 1 && (
-            <select
-              value={gameId}
-              onChange={(e) => setGameId(e.target.value)}
-              className="rounded-md border border-border bg-background px-2 py-1 text-sm"
-            >
-              {availableGames.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          )}
-          <button
-            type="button"
-            onClick={() => backfill.mutate()}
-            disabled={backfill.isPending}
-            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
-            title="Recompute stats from historical matches"
+        {!fixedGameId && availableGames.length > 1 && (
+          <select
+            value={gameId}
+            onChange={(e) => setGameId(e.target.value)}
+            className="rounded-md border border-border bg-background px-2 py-1 text-sm"
           >
-            {backfill.isPending ? "Rebuilding…" : "Rebuild stats"}
-          </button>
-        </div>
+            {availableGames.map((g) => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+        )}
       </div>
-      {backfill.data && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Scanned {backfill.data.scanned}, repaired {backfill.data.statRowsRepaired} row(s).
-        </p>
-      )}
 
       <div className="mt-4 overflow-x-auto">
         {q.isLoading ? (
