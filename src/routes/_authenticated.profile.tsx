@@ -6,6 +6,56 @@ import { useMemo, useState } from "react";
 import { ProfileDialog } from "@/components/profile/ProfileDialog";
 import { Button } from "@/components/ui/button";
 
+function GamerscoreChart({ history }: { history: { at: string; delta: number }[] }) {
+  const points = useMemo(() => {
+    let cum = 0;
+    return history.map((h, i) => {
+      cum += h.delta;
+      return { i, cum, at: h.at };
+    });
+  }, [history]);
+  if (points.length === 0) {
+    return (
+      <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
+        No completed games yet.
+      </div>
+    );
+  }
+  const w = 640;
+  const h = 140;
+  const pad = 12;
+  const xs = points.map((p) => p.i);
+  const ys = points.map((p) => p.cum);
+  const maxX = Math.max(1, Math.max(...xs));
+  const minY = Math.min(0, ...ys);
+  const maxY = Math.max(0, ...ys);
+  const spanY = maxY - minY || 1;
+  const px = (x: number) => pad + (x / (maxX || 1)) * (w - pad * 2);
+  const py = (y: number) => h - pad - ((y - minY) / spanY) * (h - pad * 2);
+  const line = points.map((p, i) => `${i === 0 ? "M" : "L"} ${px(p.i)} ${py(p.cum)}`).join(" ");
+  const zeroY = py(0);
+  const last = points[points.length - 1];
+  const color = last.cum >= 0 ? "#f59e0b" : "#fb7185";
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-32 w-full">
+      <defs>
+        <linearGradient id="gsFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {zeroY > 0 && zeroY < h && (
+        <line x1={pad} x2={w - pad} y1={zeroY} y2={zeroY} stroke="currentColor" strokeOpacity="0.15" strokeDasharray="3 3" />
+      )}
+      <path d={`${line} L ${px(last.i)} ${zeroY} L ${px(points[0].i)} ${zeroY} Z`} fill="url(#gsFill)" />
+      <path d={line} stroke={color} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+      {points.map((p, i) => (
+        <circle key={i} cx={px(p.i)} cy={py(p.cum)} r={i === points.length - 1 ? 3 : 1.5} fill={color} />
+      ))}
+    </svg>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
