@@ -520,6 +520,27 @@ function GameView({
 
   const discardTop = match.discard && match.discard.length > 0 ? match.discard[match.discard.length - 1] : null;
 
+  // Track the most recently drawn card so we can glow it light-blue until
+  // the player plays/discards it or draws again.
+  const prevHandRef = useRef<string[] | null>(null);
+  const [newCardId, setNewCardId] = useState<string | null>(null);
+  useEffect(() => {
+    const prev = prevHandRef.current;
+    if (prev === null) {
+      prevHandRef.current = myHand.slice();
+      return;
+    }
+    const prevSet = new Set(prev);
+    const added = myHand.filter((c) => !prevSet.has(c));
+    if (added.length === 1) setNewCardId(added[0]);
+    else if (added.length > 1) setNewCardId(null);
+    prevHandRef.current = myHand.slice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myHand.join("|")]);
+  useEffect(() => {
+    if (newCardId && !myHand.includes(newCardId)) setNewCardId(null);
+  }, [newCardId, myHand]);
+
   // Automatic meld arrangement — recomputes any time the hand changes.
   const arrangement = useMemo(
     () => autoArrange(myHand, wildRank),
