@@ -818,7 +818,7 @@ function GameView({
           <div className="relative z-30 overflow-visible pt-6 pb-2">
           <div
             ref={handRowRef}
-            className="relative z-30 flex min-h-[6.5rem] flex-nowrap items-end justify-center overflow-visible pb-1 sm:min-h-[8.5rem] gap-x-1 sm:gap-x-2 [&>*+*]:[margin-left:calc(var(--hand-squeeze,0px)*-1)]"
+            className="relative z-30 flex min-h-[6.5rem] flex-nowrap items-center justify-center overflow-visible pb-1 sm:min-h-[8.5rem] gap-x-1 sm:gap-x-2 [&>*+*]:[margin-left:calc(var(--hand-squeeze,0px)*-1)]"
             style={{ ["--hand-squeeze" as unknown as string]: `${handSqueeze}px` }}
           >
               <AnimatePresence initial={false}>
