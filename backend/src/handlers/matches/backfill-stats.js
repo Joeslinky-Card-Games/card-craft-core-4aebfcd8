@@ -4,6 +4,66 @@ const { ok, serverError } = require("../../lib/response");
 const { withAuth } = require("../../lib/auth");
 const { gameIdForStats, raiseStatsToFloor, recordRoundsBackfill, recordMatchCompletion } = require("../../lib/stats");
 const { recordCompletedMatch } = require("../../lib/runtime-stats");
+const { UpdateCommand } = require("@aws-sdk/lib-dynamodb");
+
+const BASE_GAMERSCORE = 10;
+
+// Recompute gamerscore + history from scratch across every completed match
+// using the current formula (flat base + margin vs. average opponent score).
+// Idempotent — overwrites gamerscore and history on each stats row.
+async function recomputeGamerscore(completedMatches) {
+  const byKey = new Map();
+  const sorted = completedMatches
+    .slice()
+    .sort((a, b) => String(a.completedAt || a.updatedAt || "").localeCompare(String(b.completedAt || b.updatedAt || "")));
+  for (const match of sorted) {
+    const gameId = gameIdForStats(match);
+    const humans = (match.players || []).filter((p) => typeof p === "string" && !p.startsWith("ai-"));
+    if (humans.length === 0) continue;
+    const scores = match.scores || {};
+    const usernames = match.usernames || {};
+    const humanTotal = humans.reduce((s, u) => s + Number(scores[u] || 0), 0);
+    const at = match.completedAt || match.updatedAt || new Date().toISOString();
+    for (const userId of humans) {
+      const points = Number(scores[userId] || 0);
+      const others = humans.length > 1 ? humans.length - 1 : 1;
+      const avgOthers = humans.length > 1 ? (humanTotal - points) / others : 0;
+      const margin = humans.length > 1 ? Math.round(avgOthers - points) : 0;
+      const delta = BASE_GAMERSCORE + margin;
+      const key = `${gameId}\u0000${userId}`;
+      const row = byKey.get(key) || {
+        userId,
+        gameId,
+        gamerscore: 0,
+        history: [],
+        username: String(usernames[userId] || `player-${String(userId).slice(-4)}`).slice(0, 64),
+      };
+      row.gamerscore += delta;
+      row.history.push({ at, delta, matchId: match.matchId || null, players: humans.length });
+      row.username = String(usernames[userId] || row.username).slice(0, 64);
+      byKey.set(key, row);
+    }
+  }
+  let rowsWritten = 0;
+  for (const row of byKey.values()) {
+    await ddb.send(
+      new UpdateCommand({
+        TableName: tables.stats,
+        Key: { userId: row.userId, gameId: row.gameId },
+        UpdateExpression:
+          "SET gamerscore = :gs, history = :h, username = if_not_exists(username, :name), updatedAt = :now",
+        ExpressionAttributeValues: {
+          ":gs": row.gamerscore,
+          ":h": row.history,
+          ":name": row.username,
+          ":now": new Date().toISOString(),
+        },
+      })
+    );
+    rowsWritten++;
+  }
+  return rowsWritten;
+}
 
 function isHuman(playerId) {
   return typeof playerId === "string" && !playerId.startsWith("ai-");
@@ -57,6 +117,7 @@ exports.handler = withAuth(async () => {
     let matchesBackfilled = 0;
     const details = [];
     const totalsByUser = new Map();
+    const completedMatches = [];
     let ExclusiveStartKey;
     do {
       const res = await ddb.send(new ScanCommand({
@@ -66,6 +127,7 @@ exports.handler = withAuth(async () => {
       for (const match of res.Items || []) {
         scanned++;
         addTotals(totalsByUser, match);
+        if (match.status === "complete") completedMatches.push(match);
         const round = Number(match.round || 0);
         const recordedThrough = Number(match.roundsRecordedThrough || 0);
         const roundIsOver = match.status === "round-complete" || match.status === "complete";
@@ -130,11 +192,13 @@ exports.handler = withAuth(async () => {
 
     const repairedRounds = repaired.reduce((sum, row) => sum + row.roundsPlayedDelta, 0);
     const repairedMatches = repaired.reduce((sum, row) => sum + row.gamesPlayedDelta, 0);
+    const gamerscoreRowsRecomputed = await recomputeGamerscore(completedMatches);
     return ok({
       scanned,
       roundsBackfilled: roundsBackfilled + repairedRounds,
       matchesBackfilled: matchesBackfilled + repairedMatches,
       statRowsRepaired,
+      gamerscoreRowsRecomputed,
       details,
       repaired,
     });
