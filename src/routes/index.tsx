@@ -27,8 +27,10 @@ function Index() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <SuitsBackground />
-      <SiteHeader />
-      <main className="relative mx-auto flex max-w-6xl flex-col items-center px-6 py-24 text-center">
+      <div className="relative z-10">
+        <SiteHeader />
+      </div>
+      <main className="relative z-10 mx-auto flex max-w-6xl flex-col items-center px-6 py-24 text-center">
         <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">
           Online card games
         </span>
