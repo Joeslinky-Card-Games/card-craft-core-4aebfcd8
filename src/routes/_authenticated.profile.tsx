@@ -114,6 +114,8 @@ function ProfilePage() {
   const { user } = useUser();
   const call = useApi();
   const [open, setOpen] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<string | null>(null);
 
   const gamesQ = useQuery({
     queryKey: ["games"],
@@ -140,6 +142,26 @@ function ProfilePage() {
   }, [profileQ.data]);
 
   if (!user) return null;
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    setBackfillResult(null);
+    try {
+      const res = await call<{ scanned: number; gamerscoreRowsRecomputed: number }>(
+        "/matches/backfill-stats",
+        { method: "POST" },
+      );
+      setBackfillResult(
+        `Scanned ${res.scanned} matches, recomputed ${res.gamerscoreRowsRecomputed} stat rows.`,
+      );
+      // Refresh profile data.
+      window.location.reload();
+    } catch (err) {
+      setBackfillResult(`Backfill failed: ${(err as Error).message}`);
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const rows: Array<{ label: string; value: string | null | undefined }> = [
     { label: "Display name", value: user.fullName ?? user.username },
@@ -204,10 +226,18 @@ function ProfilePage() {
       <div className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Game stats</h2>
-          <Button size="sm" variant="secondary" onClick={() => setOpen(true)} disabled={profileQ.isLoading}>
-            View full profile
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={runBackfill} disabled={backfilling}>
+              {backfilling ? "Running…" : "Run backfill"}
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setOpen(true)} disabled={profileQ.isLoading}>
+              View full profile
+            </Button>
+          </div>
         </div>
+        {backfillResult && (
+          <p className="mb-3 text-xs text-muted-foreground">{backfillResult}</p>
+        )}
         {profileQ.isLoading ? (
           <p className="text-sm text-muted-foreground">Loading stats…</p>
         ) : profileQ.isError ? (
