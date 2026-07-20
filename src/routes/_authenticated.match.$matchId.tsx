@@ -547,6 +547,10 @@ function GameView({
   }, [unmelded, manualOrder]);
   const hasCustomSort = manualOrder.length > 0;
   const totalHandCards = arrangement.melds.flat().length + orderedUnmelded.length;
+  const handLayoutKey = useMemo(
+    () => `${arrangement.melds.map((m) => m.join(",")).join("|")}::${orderedUnmelded.join(",")}`,
+    [arrangement.melds, orderedUnmelded],
+  );
   // Dynamic squeeze: measure the row and apply negative margin to each
   // child after the first so cards always fit without horizontal scroll.
   const handRowRef = useRef<HTMLDivElement>(null);
@@ -554,11 +558,11 @@ function GameView({
   useLayoutEffect(() => {
     const el = handRowRef.current;
     if (!el) return;
+    let frame = 0;
+    let secondFrame = 0;
     const measure = () => {
       const node = handRowRef.current;
       if (!node) return;
-      // Reset before measuring so we get the natural (un-squeezed) child widths.
-      node.style.setProperty("--hand-squeeze", "0px");
       const children = Array.from(node.children) as HTMLElement[];
       if (children.length === 0) {
         setHandSqueeze(0);
@@ -585,15 +589,35 @@ function GameView({
         setHandSqueeze(Math.ceil(overflow / gaps) + 2);
       }
     };
-    measure();
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(secondFrame);
+      frame = requestAnimationFrame(() => {
+        measure();
+        // Framer layout animations, drag/drop, and card re-melding can settle
+        // one frame after React commits. Measure again after that settle frame
+        // so squeeze stays correct without a refresh.
+        secondFrame = requestAnimationFrame(measure);
+      });
+    };
+    scheduleMeasure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
-    window.addEventListener("resize", measure);
+    if (el.parentElement) ro.observe(el.parentElement);
+    for (const child of Array.from(el.children)) ro.observe(child);
+    const mo = new MutationObserver(scheduleMeasure);
+    mo.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
+    window.addEventListener("resize", scheduleMeasure);
+    window.visualViewport?.addEventListener("resize", scheduleMeasure);
     return () => {
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(secondFrame);
       ro.disconnect();
-      window.removeEventListener("resize", measure);
+      mo.disconnect();
+      window.removeEventListener("resize", scheduleMeasure);
+      window.visualViewport?.removeEventListener("resize", scheduleMeasure);
     };
-  }, [totalHandCards, orderedUnmelded.length, arrangement.melds.length]);
+  }, [totalHandCards, handLayoutKey]);
 
   const dragSensors = useSensors(
     // Small activation distance so single-tap still fires the discard click.
@@ -1641,7 +1665,7 @@ function SortableCard({
     touchAction: "none",
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative hover:!z-[110]">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative">
       <PlayingCard id={id} wildRank={wildRank} size={size} onClick={onClick} />
     </div>
   );
