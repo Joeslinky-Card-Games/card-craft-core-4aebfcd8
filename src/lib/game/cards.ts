@@ -60,7 +60,8 @@ export function sortHand(cards: string[], wildRank: string | null | undefined): 
     if (pb.joker) return -1;
     const suitOrder: Record<Suit, number> = { S: 0, H: 1, D: 2, C: 3 };
     if (pa.suit !== pb.suit) return suitOrder[pa.suit] - suitOrder[pb.suit];
-    return RANK_ORDER[pa.rank] - RANK_ORDER[pb.rank];
+    // Highest rank first (players can drag to override manually).
+    return RANK_ORDER[pb.rank] - RANK_ORDER[pa.rank];
   });
 }
 
