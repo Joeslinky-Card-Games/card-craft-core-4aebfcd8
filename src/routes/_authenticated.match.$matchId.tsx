@@ -1024,7 +1024,7 @@ function TableArea({
   });
 
   return (
-    <div className="relative mx-auto aspect-[4/3] w-full max-w-4xl sm:aspect-[16/9]" style={{ maxHeight: "min(55dvh, 28rem)", height: "min(calc((100vw - 2rem) * 9 / 16), 55dvh, 28rem)" }}>
+    <div className="relative mx-auto aspect-[4/3] h-full max-h-full w-auto max-w-full sm:aspect-[16/9]">
       {/* Oval table */}
       <div
         className="absolute inset-4 rounded-[50%] border-[10px] border-amber-950/80 shadow-[inset_0_0_60px_rgba(0,0,0,0.55),0_20px_50px_rgba(0,0,0,0.5)]"
