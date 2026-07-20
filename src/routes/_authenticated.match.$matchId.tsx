@@ -697,22 +697,25 @@ function GameView({
       <div className="relative z-10 mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
           <Link to="/lobby" className="text-white/70 underline hover:text-white">← Lobby</Link>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-amber-300/30 bg-black/25 px-3 py-1.5 text-white/80 shadow backdrop-blur sm:gap-x-4 sm:rounded-full sm:px-4">
-            <span>R <b className="text-amber-200">{match.round}/13</b></span>
-            <span className="text-white/30">·</span>
-            <span>Hand <b className="text-amber-200">{match.handSize}</b></span>
-            <span className="text-white/30">·</span>
-            <span>Wild <b className="text-amber-300">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b>+★</span>
-            <span className="text-white/30">·</span>
-            <span>Score <b className="text-amber-200">{match.scores?.[userId] ?? 0}</b></span>
-            <span className="text-white/30">·</span>
-            <button
-              type="button"
-              onClick={() => setRulesOpen(true)}
-              className="rounded-full px-1 text-amber-200 hover:text-amber-100"
-            >
-              Rules
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-amber-300/30 bg-black/25 px-3 py-1.5 text-white/80 shadow backdrop-blur sm:gap-x-4 sm:rounded-full sm:px-4">
+              <span>R <b className="text-amber-200">{match.round}/13</b></span>
+              <span className="text-white/30">·</span>
+              <span>Hand <b className="text-amber-200">{match.handSize}</b></span>
+              <span className="text-white/30">·</span>
+              <span>Wild <b className="text-amber-300">{wildRank === null ? "—" : wildRank === "T" ? "10" : wildRank}</b>+★</span>
+              <span className="text-white/30">·</span>
+              <button
+                type="button"
+                onClick={() => setRulesOpen(true)}
+                className="rounded-full px-1 text-amber-200 hover:text-amber-100"
+              >
+                Rules
+              </button>
+            </div>
+            <div className="rounded-2xl border border-emerald-300/30 bg-black/25 px-3 py-1.5 text-white/90 shadow backdrop-blur sm:rounded-full sm:px-4">
+              Score <b className="text-amber-200">{match.scores?.[userId] ?? 0}</b>
+            </div>
           </div>
         </div>
 
