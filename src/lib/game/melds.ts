@@ -177,7 +177,8 @@ function orderRun(cards: string[], wildRank: string | null | undefined): string[
       for (let i = 0; i < emptySlots.length; i++) slotToIdx.set(emptySlots[i], wilds[i].idx);
       const out: string[] = [];
       for (let s = start; s <= end; s++) out.push(cards[slotToIdx.get(s)!]);
-      return out;
+      // Display runs highest to lowest.
+      return out.reverse();
     }
   }
   return null;
