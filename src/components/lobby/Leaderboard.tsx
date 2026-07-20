@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { endpoints, type Game, type StatRow } from "@/lib/api";
+import { ProfileDialog } from "@/components/profile/ProfileDialog";
 
 type Props = { games: Game[]; gameId?: string };
 
 export function Leaderboard({ games, gameId: fixedGameId }: Props) {
   const availableGames = games.filter((g) => g.status === "available");
   const [gameId, setGameId] = useState<string>(fixedGameId ?? availableGames[0]?.id ?? "");
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
 
   useEffect(() => {
     if (fixedGameId) {
@@ -88,7 +91,18 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
               {rows.map((r, i) => (
                 <tr key={r.userId} className="border-b border-border/50 last:border-0">
                   <td className="py-2 pr-2 text-muted-foreground">{i + 1}</td>
-                  <td className="py-2 pr-2 font-medium">{r.username ?? r.userId.slice(-6)}</td>
+                  <td className="py-2 pr-2 font-medium">
+                    <button
+                      type="button"
+                      className="underline-offset-2 hover:text-amber-200 hover:underline"
+                      onClick={() => {
+                        setProfileName(r.username ?? null);
+                        setProfileUserId(r.userId);
+                      }}
+                    >
+                      {r.username ?? r.userId.slice(-6)}
+                    </button>
+                  </td>
                   <td className="py-2 pr-2 text-right tabular-nums">{r.gamesPlayed}</td>
                   <td className="py-2 pr-2 text-right tabular-nums">{r.gamesWon}</td>
                   <td className="py-2 pr-2 text-right tabular-nums">
@@ -103,6 +117,13 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
           </table>
         )}
       </div>
+      <ProfileDialog
+        open={Boolean(profileUserId)}
+        onOpenChange={(v) => { if (!v) setProfileUserId(null); }}
+        userId={profileUserId}
+        fallbackName={profileName}
+        games={games}
+      />
     </section>
   );
 }
