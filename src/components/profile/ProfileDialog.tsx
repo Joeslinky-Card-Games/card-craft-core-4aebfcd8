@@ -65,8 +65,11 @@ function ScoreChart({ history }: { history: { at: string; delta: number }[] }) {
     );
   }
   const w = 360;
-  const h = 100;
-  const pad = 8;
+  const h = 140;
+  const padL = 30;
+  const padR = 8;
+  const padT = 10;
+  const padB = 24;
   const xs = points.map((p) => p.i);
   const ys = points.map((p) => p.cum);
   const minX = 0;
@@ -74,28 +77,58 @@ function ScoreChart({ history }: { history: { at: string; delta: number }[] }) {
   const minY = Math.min(0, ...ys);
   const maxY = Math.max(0, ...ys);
   const spanY = maxY - minY || 1;
-  const px = (x: number) => pad + ((x - minX) / (maxX - minX || 1)) * (w - pad * 2);
-  const py = (y: number) => h - pad - ((y - minY) / spanY) * (h - pad * 2);
+  const px = (x: number) => padL + ((x - minX) / (maxX - minX || 1)) * (w - padL - padR);
+  const py = (y: number) => h - padB - ((y - minY) / spanY) * (h - padT - padB);
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"} ${px(p.i)} ${py(p.cum)}`).join(" ");
   const zeroY = py(0);
   const last = points[points.length - 1];
   const color = last.cum >= 0 ? "#facc15" : "#fb7185";
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+  const tickCount = Math.min(4, points.length);
+  const xTicks = Array.from({ length: tickCount }, (_, k) => {
+    const idx = Math.round((k / Math.max(1, tickCount - 1)) * (points.length - 1));
+    return points[idx];
+  });
+  const yTicks = [minY, minY + spanY / 2, maxY];
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-24 w-full">
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-32 w-full" role="img" aria-label="Cumulative gamerscore over time">
       <defs>
         <linearGradient id="scoreFill" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.35" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
+      {yTicks.map((v, i) => (
+        <g key={i}>
+          <line x1={padL} x2={w - padR} y1={py(v)} y2={py(v)} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+          <text x={padL - 5} y={py(v)} textAnchor="end" dominantBaseline="middle" fontSize="9" fill="rgba(255,255,255,0.55)">
+            {Math.round(v)}
+          </text>
+        </g>
+      ))}
+      <line x1={padL} x2={w - padR} y1={h - padB} y2={h - padB} stroke="rgba(255,255,255,0.2)" />
+      {xTicks.map((p, i) => (
+        <text key={i} x={px(p.i)} y={h - padB + 12} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.55)">
+          {fmt(p.at)}
+        </text>
+      ))}
       {zeroY > 0 && zeroY < h && (
-        <line x1={pad} x2={w - pad} y1={zeroY} y2={zeroY} stroke="rgba(255,255,255,0.15)" strokeDasharray="3 3" />
+        <line x1={padL} x2={w - padR} y1={zeroY} y2={zeroY} stroke="rgba(255,255,255,0.25)" />
       )}
       <path d={`${line} L ${px(last.i)} ${zeroY} L ${px(points[0].i)} ${zeroY} Z`} fill="url(#scoreFill)" />
       <path d={line} stroke={color} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
       {points.map((p, i) => (
         <circle key={i} cx={px(p.i)} cy={py(p.cum)} r={i === points.length - 1 ? 3 : 1.5} fill={color} />
       ))}
+      <text x={(padL + w - padR) / 2} y={h - 2} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.5)">
+        Date
+      </text>
+      <text x={-(h / 2)} y={9} transform="rotate(-90)" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.5)">
+        Score
+      </text>
     </svg>
   );
 }
