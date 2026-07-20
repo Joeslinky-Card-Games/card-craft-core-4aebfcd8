@@ -86,6 +86,14 @@ export function PlayingCard({
         <span>{suitSymbol(c.suit)}</span>
       </div>
       <div className={`${pipSize[size]} leading-none`}>{suitSymbol(c.suit)}</div>
+      {usedAsNatural && (
+        <span
+          className="absolute -top-1 -right-1 rounded-full bg-amber-400 px-1 py-px text-[8px] font-bold uppercase leading-none tracking-wider text-slate-900 ring-1 ring-amber-600 shadow"
+          title="Wild card played as natural"
+        >
+          N
+        </span>
+      )}
     </button>
   );
 }
