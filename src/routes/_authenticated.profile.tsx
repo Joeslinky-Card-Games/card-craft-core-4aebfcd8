@@ -37,6 +37,14 @@ function ProfilePage() {
     [profileQ.data],
   );
 
+  const history = useMemo(() => {
+    const all: { at: string; delta: number }[] = [];
+    for (const s of profileQ.data?.stats ?? []) {
+      for (const h of s.history ?? []) all.push({ at: h.at, delta: h.delta });
+    }
+    return all.sort((a, b) => a.at.localeCompare(b.at));
+  }, [profileQ.data]);
+
   if (!user) return null;
 
   const rows: Array<{ label: string; value: string | null | undefined }> = [
@@ -85,6 +93,13 @@ function ProfilePage() {
           </div>
         ))}
       </dl>
+
+      <div className="mt-8">
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Gamerscore over time</h2>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <GamerscoreChart history={history} />
+        </div>
+      </div>
 
       <div className="mt-8">
         <div className="mb-3 flex items-center justify-between">
