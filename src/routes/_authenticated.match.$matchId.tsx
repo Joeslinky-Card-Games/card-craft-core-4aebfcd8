@@ -906,6 +906,7 @@ function GameView({
                           size="lg"
                           onClick={() => handleCardClick(c)}
                           tint={newCardId === c ? "new" : "meld"}
+                          meldContext={meld}
                         />
                       </motion.div>
                     ))}
