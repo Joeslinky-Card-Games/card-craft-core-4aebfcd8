@@ -1659,7 +1659,7 @@ function SortableCard({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 50 : undefined,
+    zIndex: isDragging ? 50 : (index ?? 0) + 20,
     opacity: isDragging ? 0.85 : 1,
     cursor: isDragging ? "grabbing" : "grab",
     touchAction: "none",
