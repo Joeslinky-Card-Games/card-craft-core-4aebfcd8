@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useUser } from "@clerk/tanstack-react-start";
-import { useApi, type GameAction, type MatchView, type ChatMessage } from "@/lib/api";
+import { useApi, endpoints, type Game, type GameAction, type MatchView, type ChatMessage } from "@/lib/api";
 import { useClerkIdentity } from "@/lib/identity";
 import { PlayingCard, CardBack, EmptyCardSlot } from "@/components/game/PlayingCard";
 import { sortHand, cardPoints } from "@/lib/game/cards";
@@ -32,6 +32,15 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { StackAttackMatch } from "@/components/stackattack/StackAttackMatch";
+import { ProfileDialog } from "@/components/profile/ProfileDialog";
+
+// Simple context so any Avatar/name in the match tree can trigger the
+// profile dialog without threading callbacks through several layers.
+type ProfileTarget = { userId: string; name?: string | null; avatarUrl?: string | null };
+const ProfileContext = createContext<((t: ProfileTarget) => void) | null>(null);
+function useOpenProfile() {
+  return useContext(ProfileContext);
+}
 
 export const Route = createFileRoute("/_authenticated/match/$matchId")({
   head: () => ({
