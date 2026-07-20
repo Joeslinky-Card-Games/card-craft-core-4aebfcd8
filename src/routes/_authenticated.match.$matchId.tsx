@@ -798,10 +798,10 @@ function GameView({
 
         <LayoutGroup>
           {/* Single hand row: melds (condensed/overlapping) + unmelded cards */}
-          <div className="py-1">
+          <div className="pt-4 pb-1">
           <div
             ref={handRowRef}
-            className="flex min-h-[6.5rem] flex-nowrap items-end justify-center overflow-x-hidden pb-1 sm:min-h-[8.5rem] gap-x-1 sm:gap-x-2 [&>*+*]:[margin-left:calc(var(--hand-squeeze,0px)*-1)]"
+            className="flex min-h-[6.5rem] flex-nowrap items-end justify-center overflow-x-visible pb-1 sm:min-h-[8.5rem] gap-x-1 sm:gap-x-2 [&>*+*]:[margin-left:calc(var(--hand-squeeze,0px)*-1)]"
             style={{ ["--hand-squeeze" as unknown as string]: `${handSqueeze}px` }}
           >
               <AnimatePresence initial={false}>
