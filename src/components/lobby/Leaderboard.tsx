@@ -70,31 +70,31 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
         )}
       </div>
 
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4">
         {q.isLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No games played yet. Be the first!</p>
         ) : (
-          <table className="w-full min-w-[420px] text-sm">
+          <table className="w-full table-fixed text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="py-2 pr-2 font-medium">#</th>
-                <th className="py-2 pr-2 font-medium">Player</th>
-                <th className="py-2 pr-2 text-right font-medium">Games</th>
-                <th className="py-2 pr-2 text-right font-medium">Wins</th>
-                <th className="py-2 pr-2 text-right font-medium">Win rate</th>
-                <th className="py-2 pr-2 text-right font-medium">Avg pts</th>
+                <th className="w-8 py-2 pr-1 font-medium">#</th>
+                <th className="py-2 pr-1 font-medium">Player</th>
+                <th className="w-10 py-2 pr-1 text-right font-medium sm:w-14"><span className="sm:hidden">G</span><span className="hidden sm:inline">Games</span></th>
+                <th className="w-10 py-2 pr-1 text-right font-medium sm:w-14"><span className="sm:hidden">W</span><span className="hidden sm:inline">Wins</span></th>
+                <th className="w-12 py-2 pr-1 text-right font-medium sm:w-20"><span className="sm:hidden">Win%</span><span className="hidden sm:inline">Win rate</span></th>
+                <th className="w-12 py-2 pr-1 text-right font-medium sm:w-16"><span className="sm:hidden">Pts</span><span className="hidden sm:inline">Avg pts</span></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
                 <tr key={r.userId} className="border-b border-border/50 last:border-0">
-                  <td className="py-2 pr-2 text-muted-foreground">{i + 1}</td>
-                  <td className="py-2 pr-2 font-medium">
+                  <td className="py-2 pr-1 text-muted-foreground">{i + 1}</td>
+                  <td className="py-2 pr-1 font-medium">
                     <button
                       type="button"
-                      className="underline-offset-2 hover:text-amber-200 hover:underline"
+                      className="max-w-full truncate underline-offset-2 hover:text-amber-200 hover:underline"
                       onClick={() => {
                         setProfileName(r.username ?? null);
                         setProfileUserId(r.userId);
@@ -103,12 +103,12 @@ export function Leaderboard({ games, gameId: fixedGameId }: Props) {
                       {r.username ?? r.userId.slice(-6)}
                     </button>
                   </td>
-                  <td className="py-2 pr-2 text-right tabular-nums">{r.gamesPlayed}</td>
-                  <td className="py-2 pr-2 text-right tabular-nums">{r.gamesWon}</td>
-                  <td className="py-2 pr-2 text-right tabular-nums">
+                  <td className="py-2 pr-1 text-right tabular-nums">{r.gamesPlayed}</td>
+                  <td className="py-2 pr-1 text-right tabular-nums">{r.gamesWon}</td>
+                  <td className="py-2 pr-1 text-right tabular-nums">
                     {(r.winRate * 100).toFixed(0)}%
                   </td>
-                  <td className="py-2 pr-2 text-right tabular-nums">
+                  <td className="py-2 pr-1 text-right tabular-nums">
                     {r.avgPoints == null ? "—" : r.avgPoints.toFixed(1)}
                   </td>
                 </tr>
