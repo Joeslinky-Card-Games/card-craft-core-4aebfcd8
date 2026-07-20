@@ -70,6 +70,20 @@ function ProfilePage() {
   const { user } = useUser();
   const call = useApi();
   const [open, setOpen] = useState(false);
+  const [backfillState, setBackfillState] = useState<
+    { status: "idle" } | { status: "running" } | { status: "done"; result: any } | { status: "error"; message: string }
+  >({ status: "idle" });
+
+  async function runBackfill() {
+    setBackfillState({ status: "running" });
+    try {
+      const result = await call<any>(`/matches/backfill-stats`, { method: "POST" });
+      setBackfillState({ status: "done", result });
+      profileQ.refetch();
+    } catch (e: any) {
+      setBackfillState({ status: "error", message: e?.message || "Backfill failed" });
+    }
+  }
 
   const gamesQ = useQuery({
     queryKey: ["games"],
@@ -149,6 +163,29 @@ function ProfilePage() {
         <div className="rounded-lg border border-border bg-card p-4">
           <GamerscoreChart history={history} />
         </div>
+      </div>
+
+      <div className="mt-8 rounded-lg border border-border bg-card p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-foreground">Recalculate stats</div>
+            <div className="text-xs text-muted-foreground">
+              Rebuilds gamerscore and history for every player from completed matches.
+            </div>
+          </div>
+          <Button size="sm" onClick={runBackfill} disabled={backfillState.status === "running"}>
+            {backfillState.status === "running" ? "Running…" : "Run backfill"}
+          </Button>
+        </div>
+        {backfillState.status === "done" && (
+          <p className="mt-3 text-xs text-emerald-500">
+            Done. Scanned {backfillState.result?.scanned ?? 0} matches, recomputed{" "}
+            {backfillState.result?.gamerscoreRowsRecomputed ?? 0} gamerscore rows.
+          </p>
+        )}
+        {backfillState.status === "error" && (
+          <p className="mt-3 text-xs text-rose-500">{backfillState.message}</p>
+        )}
       </div>
 
       <div className="mt-8">
