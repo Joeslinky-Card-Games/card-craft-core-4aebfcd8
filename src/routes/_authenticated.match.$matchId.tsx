@@ -540,6 +540,11 @@ function GameView({
   useEffect(() => {
     if (newCardId && !myHand.includes(newCardId)) setNewCardId(null);
   }, [newCardId, myHand]);
+  // Clear the "new card" glow once the player has completed their turn
+  // (i.e. once it's no longer their turn) or hasn't drawn yet.
+  useEffect(() => {
+    if (!isMyTurn || !match.hasDrawn) setNewCardId(null);
+  }, [isMyTurn, match.hasDrawn]);
 
   // Automatic meld arrangement — recomputes any time the hand changes.
   const arrangement = useMemo(
