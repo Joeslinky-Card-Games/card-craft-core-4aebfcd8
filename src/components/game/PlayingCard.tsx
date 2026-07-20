@@ -67,7 +67,7 @@ export function PlayingCard({
   }
 
   const red = isRedSuit(c.suit);
-  const color = red ? "!text-rose-600" : "!text-slate-900";
+  const color = wild ? "!text-amber-500" : red ? "!text-rose-600" : "!text-slate-900";
   return (
     <button type="button" onClick={onClick} className={`${base} ${state} ${color} ${className}`}>
       <div className={`absolute left-1.5 top-1 flex flex-col items-center leading-none ${cornerSize[size]}`}>
@@ -79,9 +79,6 @@ export function PlayingCard({
         <span>{suitSymbol(c.suit)}</span>
       </div>
       <div className={`${pipSize[size]} leading-none`}>{suitSymbol(c.suit)}</div>
-      {wild && (
-        <div className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]" />
-      )}
     </button>
   );
 }
