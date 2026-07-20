@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
+import { SuitsBackground } from "@/components/home/SuitsBackground";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,14 +25,15 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <SuitsBackground />
       <SiteHeader />
-      <main className="mx-auto flex max-w-6xl flex-col items-center px-6 py-24 text-center">
+      <main className="relative mx-auto flex max-w-6xl flex-col items-center px-6 py-24 text-center">
         <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">
           Online card games
         </span>
         <h1 className="mt-6 text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-          ArcadiumX, <span className="text-primary">reimagined</span>.
+          Your seat at the <span className="text-primary">table</span>.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
           Play Charlotte's Web and Stack Attack with friends from anywhere — or
