@@ -89,6 +89,105 @@ export function validateMeld(cards: string[], wildRank: string | null | undefine
   return validateSet(cards, wildRank) || validateRun(cards, wildRank);
 }
 
+// Determine whether a specific wild-rank (non-joker) card in a valid meld is
+// functioning as its natural rank. Returns false for jokers, non-wild cards,
+// or cards not in a valid meld.
+export function isCardUsedAsNatural(
+  cardId: string,
+  cards: string[],
+  wildRank: string | null | undefined,
+): boolean {
+  if (!wildRank || cards.length < 3) return false;
+  const target = parseCard(cardId);
+  if (target.joker || target.rank !== wildRank) return false;
+  const parsed = cards.map(parseCard);
+  const flex = parsed.map((c, i) => (!c.joker && c.rank === wildRank ? i : -1)).filter((i) => i >= 0);
+  const nFlex = flex.length;
+
+  // Sets
+  if (validateSet(cards, wildRank)) {
+    for (let mask = 0; mask < 1 << nFlex; mask++) {
+      const naturals: ParsedCard[] = [];
+      const wilds: ParsedCard[] = [];
+      for (let i = 0; i < parsed.length; i++) {
+        const c = parsed[i];
+        if (c.joker) { wilds.push(c); continue; }
+        const flexIdx = flex.indexOf(i);
+        if (flexIdx >= 0) {
+          const asNatural = ((mask >> flexIdx) & 1) === 1;
+          (asNatural ? naturals : wilds).push(c);
+        } else {
+          naturals.push(c);
+        }
+      }
+      if (setShape(wilds, naturals)) {
+        return naturals.some((n) => n.id === cardId);
+      }
+    }
+  }
+
+  // Runs
+  if (validateRun(cards, wildRank)) {
+    const L = cards.length;
+    for (let mask = 0; mask < 1 << nFlex; mask++) {
+      const wilds: { idx: number }[] = [];
+      const naturals: { idx: number; c: ParsedCard }[] = [];
+      for (let i = 0; i < parsed.length; i++) {
+        const c = parsed[i];
+        if (c.joker) { wilds.push({ idx: i }); continue; }
+        const flexIdx = flex.indexOf(i);
+        if (flexIdx >= 0) {
+          const asNatural = ((mask >> flexIdx) & 1) === 1;
+          if (asNatural) naturals.push({ idx: i, c });
+          else wilds.push({ idx: i });
+        } else {
+          naturals.push({ idx: i, c });
+        }
+      }
+      if (naturals.length <= wilds.length) continue;
+      const suits = new Set(naturals.map((n) => n.c.suit));
+      if (suits.size !== 1) continue;
+
+      const fixed: { slot: number; idx: number }[] = [];
+      const aces: { idx: number }[] = [];
+      let dup = false;
+      const seen = new Set<number>();
+      for (const n of naturals) {
+        const rank = n.c.rank;
+        if (rank === "A") { aces.push({ idx: n.idx }); continue; }
+        const p = RANK_ORDER[rank];
+        if (seen.has(p)) { dup = true; break; }
+        seen.add(p);
+        fixed.push({ slot: p, idx: n.idx });
+      }
+      if (dup) continue;
+
+      for (let start = 1; start + L - 1 <= 14; start++) {
+        const end = start + L - 1;
+        const slotToIdx = new Map<number, number>();
+        let ok = true;
+        for (const f of fixed) {
+          if (f.slot < start || f.slot > end || slotToIdx.has(f.slot)) { ok = false; break; }
+          slotToIdx.set(f.slot, f.idx);
+        }
+        if (!ok) continue;
+        const aceSlots: number[] = [];
+        if (1 >= start && 1 <= end && !slotToIdx.has(1)) aceSlots.push(1);
+        if (14 >= start && 14 <= end && !slotToIdx.has(14)) aceSlots.push(14);
+        if (aces.length > aceSlots.length) continue;
+        for (let i = 0; i < aces.length; i++) slotToIdx.set(aceSlots[i], aces[i].idx);
+        const emptySlots: number[] = [];
+        for (let s = start; s <= end; s++) if (!slotToIdx.has(s)) emptySlots.push(s);
+        if (emptySlots.length !== wilds.length) continue;
+        for (let i = 0; i < emptySlots.length; i++) slotToIdx.set(emptySlots[i], wilds[i].idx);
+        const naturalIds = new Set(naturals.map((n) => cards[n.idx]));
+        return naturalIds.has(cardId);
+      }
+    }
+  }
+  return false;
+}
+
 // Reorder a valid meld's cards for display.
 // Runs are ordered low → high with wilds filling their assigned slots.
 // Sets keep naturals first, then wilds. Invalid melds are returned as-is.
