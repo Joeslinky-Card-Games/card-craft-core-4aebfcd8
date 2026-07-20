@@ -153,7 +153,7 @@ export function isCardUsedAsNatural(
       let dup = false;
       const seen = new Set<number>();
       for (const n of naturals) {
-        const rank = n.c.rank;
+        const rank = n.c.rank as Rank;
         if (rank === "A") { aces.push({ idx: n.idx }); continue; }
         const p = RANK_ORDER[rank];
         if (seen.has(p)) { dup = true; break; }
