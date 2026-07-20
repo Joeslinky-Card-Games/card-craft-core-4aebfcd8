@@ -520,6 +520,27 @@ function GameView({
 
   const discardTop = match.discard && match.discard.length > 0 ? match.discard[match.discard.length - 1] : null;
 
+  // Track the most recently drawn card so we can glow it light-blue until
+  // the player plays/discards it or draws again.
+  const prevHandRef = useRef<string[] | null>(null);
+  const [newCardId, setNewCardId] = useState<string | null>(null);
+  useEffect(() => {
+    const prev = prevHandRef.current;
+    if (prev === null) {
+      prevHandRef.current = myHand.slice();
+      return;
+    }
+    const prevSet = new Set(prev);
+    const added = myHand.filter((c) => !prevSet.has(c));
+    if (added.length === 1) setNewCardId(added[0]);
+    else if (added.length > 1) setNewCardId(null);
+    prevHandRef.current = myHand.slice();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myHand.join("|")]);
+  useEffect(() => {
+    if (newCardId && !myHand.includes(newCardId)) setNewCardId(null);
+  }, [newCardId, myHand]);
+
   // Automatic meld arrangement — recomputes any time the hand changes.
   const arrangement = useMemo(
     () => autoArrange(myHand, wildRank),
@@ -863,7 +884,7 @@ function GameView({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                    className="group relative z-10 flex items-end after:pointer-events-none after:absolute after:inset-x-1 after:-bottom-2 after:h-[3px] after:rounded-full after:bg-amber-300/60"
+                    className="group relative z-10 flex items-end"
                     title={`Meld #${mi + 1}`}
                   >
                     {meld.map((c, i) => (
@@ -871,7 +892,11 @@ function GameView({
                         key={c}
                         layoutId={`card-${c}`}
                         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                        className={`relative ${i === 0 ? "" : "-ml-10 sm:-ml-14"}`}
+                        className={`relative ${i === 0 ? "" : "-ml-10 sm:-ml-14"} ${
+                          newCardId === c
+                            ? "drop-shadow-[0_0_10px_rgba(96,165,250,0.95)]"
+                            : "drop-shadow-[0_0_8px_rgba(251,191,36,0.65)]"
+                        }`}
                         style={{ zIndex: i }}
                       >
                         <PlayingCard
@@ -885,12 +910,6 @@ function GameView({
                   </motion.div>
                   );
                 })}
-                {arrangement.melds.length > 0 && orderedUnmelded.length > 0 && (
-                  <div
-                    aria-hidden
-                    className="mx-1 h-20 w-px shrink-0 self-center bg-white/20 sm:h-28"
-                  />
-                )}
                 <DndContext
                   sensors={dragSensors}
                   collisionDetection={closestCenter}
@@ -905,6 +924,7 @@ function GameView({
                         index={i}
                         size="lg"
                         onClick={() => handleCardClick(c)}
+                        isNew={newCardId === c}
                       />
                     ))}
                   </SortableContext>
@@ -1656,12 +1676,14 @@ function SortableCard({
   index,
   size,
   onClick,
+  isNew,
 }: {
   id: string;
   wildRank: string | null;
   index?: number;
   size?: "sm" | "md" | "lg";
   onClick: () => void;
+  isNew?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = {
@@ -1673,7 +1695,13 @@ function SortableCard({
     touchAction: "none",
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`relative ${isNew ? "drop-shadow-[0_0_12px_rgba(96,165,250,0.95)]" : ""}`}
+    >
       <PlayingCard id={id} wildRank={wildRank} size={size} onClick={onClick} />
     </div>
   );
