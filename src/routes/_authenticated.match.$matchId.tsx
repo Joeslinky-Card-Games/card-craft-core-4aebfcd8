@@ -863,7 +863,7 @@ function GameView({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                    className="group relative z-10 flex items-end rounded-lg p-2 ring-1 ring-amber-300/40"
+                    className="group relative z-10 flex items-end after:pointer-events-none after:absolute after:inset-x-1 after:-bottom-2 after:h-[3px] after:rounded-full after:bg-amber-300/60"
                     title={`Meld #${mi + 1}`}
                   >
                     {meld.map((c, i) => (
@@ -885,6 +885,12 @@ function GameView({
                   </motion.div>
                   );
                 })}
+                {arrangement.melds.length > 0 && orderedUnmelded.length > 0 && (
+                  <div
+                    aria-hidden
+                    className="mx-1 h-20 w-px shrink-0 self-center bg-white/20 sm:h-28"
+                  />
+                )}
                 <DndContext
                   sensors={dragSensors}
                   collisionDetection={closestCenter}
