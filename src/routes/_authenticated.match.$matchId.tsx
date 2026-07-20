@@ -766,7 +766,7 @@ function GameView({
 
       {/* My hand */}
       <section
-        className={`mt-6 rounded-2xl p-3 transition-all duration-300 ${
+        className={`relative z-20 mt-6 overflow-visible rounded-2xl p-3 transition-all duration-300 ${
           isMyTurn && !roundComplete && !matchComplete
             ? "bg-amber-400/10 shadow-[0_0_28px_rgba(251,191,36,0.55)] ring-2 ring-amber-300"
             : "ring-1 ring-transparent"
@@ -798,10 +798,10 @@ function GameView({
 
         <LayoutGroup>
           {/* Single hand row: melds (condensed/overlapping) + unmelded cards */}
-          <div className="pt-4 pb-1">
+          <div className="relative z-30 overflow-visible pt-6 pb-2">
           <div
             ref={handRowRef}
-            className="flex min-h-[6.5rem] flex-nowrap items-end justify-center overflow-x-hidden pb-1 sm:min-h-[8.5rem] gap-x-1 sm:gap-x-2 [&>*+*]:[margin-left:calc(var(--hand-squeeze,0px)*-1)]"
+            className="relative z-30 flex min-h-[6.5rem] flex-nowrap items-end justify-center overflow-visible pb-1 sm:min-h-[8.5rem] gap-x-1 sm:gap-x-2 [&>*+*]:[margin-left:calc(var(--hand-squeeze,0px)*-1)]"
             style={{ ["--hand-squeeze" as unknown as string]: `${handSqueeze}px` }}
           >
               <AnimatePresence initial={false}>
@@ -815,7 +815,7 @@ function GameView({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                    className="group relative flex items-end hover:!z-50"
+                    className="group relative z-10 flex items-end hover:!z-[100]"
                     title={`Meld #${mi + 1}`}
                   >
                     {meld.map((c, i) => (
@@ -823,7 +823,7 @@ function GameView({
                         key={c}
                         layoutId={`card-${c}`}
                         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                        className={`hover:!z-50 ${i === 0 ? "" : "-ml-10 sm:-ml-14"}`}
+                        className={`relative hover:!z-[110] ${i === 0 ? "" : "-ml-10 sm:-ml-14"}`}
                         style={{ zIndex: i }}
                       >
                         <PlayingCard
@@ -1619,7 +1619,7 @@ function SortableCard({
     touchAction: "none",
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="hover:!z-50">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative hover:!z-[110]">
       <PlayingCard id={id} wildRank={wildRank} size={size} onClick={onClick} />
     </div>
   );
