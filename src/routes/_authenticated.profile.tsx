@@ -22,36 +22,72 @@ function GamerscoreChart({ history }: { history: { at: string; delta: number }[]
     );
   }
   const w = 640;
-  const h = 140;
-  const pad = 12;
+  const h = 180;
+  const padL = 32;
+  const padR = 12;
+  const padT = 12;
+  const padB = 28;
   const xs = points.map((p) => p.i);
   const ys = points.map((p) => p.cum);
   const maxX = Math.max(1, Math.max(...xs));
   const minY = Math.min(0, ...ys);
   const maxY = Math.max(0, ...ys);
   const spanY = maxY - minY || 1;
-  const px = (x: number) => pad + (x / (maxX || 1)) * (w - pad * 2);
-  const py = (y: number) => h - pad - ((y - minY) / spanY) * (h - pad * 2);
+  const px = (x: number) => padL + (x / (maxX || 1)) * (w - padL - padR);
+  const py = (y: number) => h - padB - ((y - minY) / spanY) * (h - padT - padB);
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"} ${px(p.i)} ${py(p.cum)}`).join(" ");
   const zeroY = py(0);
   const last = points[points.length - 1];
   const color = last.cum >= 0 ? "#f59e0b" : "#fb7185";
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+  const tickCount = Math.min(5, points.length);
+  const xTicks = Array.from({ length: tickCount }, (_, k) => {
+    const idx = Math.round((k / Math.max(1, tickCount - 1)) * (points.length - 1));
+    return points[idx];
+  });
+  const yTicks = [minY, minY + spanY / 2, maxY];
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-32 w-full">
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-44 w-full" role="img" aria-label="Cumulative gamerscore over time">
       <defs>
         <linearGradient id="gsFill" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.35" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
+      {/* y-axis grid + labels */}
+      {yTicks.map((v, i) => (
+        <g key={i}>
+          <line x1={padL} x2={w - padR} y1={py(v)} y2={py(v)} stroke="currentColor" strokeOpacity="0.1" strokeDasharray="3 3" />
+          <text x={padL - 6} y={py(v)} textAnchor="end" dominantBaseline="middle" fontSize="10" fill="currentColor" fillOpacity="0.6">
+            {Math.round(v)}
+          </text>
+        </g>
+      ))}
+      {/* x-axis */}
+      <line x1={padL} x2={w - padR} y1={h - padB} y2={h - padB} stroke="currentColor" strokeOpacity="0.25" />
+      {xTicks.map((p, i) => (
+        <text key={i} x={px(p.i)} y={h - padB + 14} textAnchor="middle" fontSize="10" fill="currentColor" fillOpacity="0.6">
+          {fmt(p.at)}
+        </text>
+      ))}
       {zeroY > 0 && zeroY < h && (
-        <line x1={pad} x2={w - pad} y1={zeroY} y2={zeroY} stroke="currentColor" strokeOpacity="0.15" strokeDasharray="3 3" />
+        <line x1={padL} x2={w - padR} y1={zeroY} y2={zeroY} stroke="currentColor" strokeOpacity="0.3" />
       )}
       <path d={`${line} L ${px(last.i)} ${zeroY} L ${px(points[0].i)} ${zeroY} Z`} fill="url(#gsFill)" />
       <path d={line} stroke={color} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
       {points.map((p, i) => (
         <circle key={i} cx={px(p.i)} cy={py(p.cum)} r={i === points.length - 1 ? 3 : 1.5} fill={color} />
       ))}
+      {/* axis titles */}
+      <text x={(padL + w - padR) / 2} y={h - 2} textAnchor="middle" fontSize="10" fill="currentColor" fillOpacity="0.55">
+        Date
+      </text>
+      <text x={10} y={padT + 2} textAnchor="start" fontSize="10" fill="currentColor" fillOpacity="0.55">
+        Score
+      </text>
     </svg>
   );
 }
@@ -105,7 +141,7 @@ function ProfilePage() {
   ];
 
   return (
-    <main className="mx-auto h-[calc(100dvh-4rem)] max-w-2xl overflow-x-hidden overflow-y-auto px-6 py-12 pb-24 [-webkit-overflow-scrolling:touch]">
+    <main className="mx-auto w-full max-w-2xl px-6 py-12 pb-24">
       <h1 className="text-3xl font-bold tracking-tight text-foreground">Profile</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Account managed by Clerk. Game stats will appear here once the backend is wired.
@@ -145,7 +181,13 @@ function ProfilePage() {
       </dl>
 
       <div className="mt-8">
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Gamerscore over time</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Gamerscore over time</h2>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-block h-0.5 w-4 rounded bg-amber-500" />
+            <span>Cumulative score</span>
+          </div>
+        </div>
         <div className="rounded-lg border border-border bg-card p-4">
           <GamerscoreChart history={history} />
         </div>
