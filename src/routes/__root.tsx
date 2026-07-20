@@ -83,12 +83,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "ArcadiumX is an online platform for classic card games. Sign in and join a table to play with friends.",
+          "ArcadiumX is an online card game lounge. Play Charlotte's Web and Stack Attack with friends or solo against AI.",
       },
-      { property: "og:title", content: "ArcadiumX — Play classic card games online" },
+      { property: "og:title", content: "ArcadiumX — Online card games" },
       {
         property: "og:description",
-        content: "Play Hearts, Spades, Poker and more with friends online.",
+        content:
+          "Play Charlotte's Web and Stack Attack with friends or solo against AI.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -1,8 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "ArcadiumX — Play Charlotte's Web & Stack Attack online" },
+      {
+        name: "description",
+        content:
+          "ArcadiumX is an online card game lounge. Play Charlotte's Web and Stack Attack with friends or solo against AI — no downloads.",
+      },
+      { property: "og:title", content: "ArcadiumX — Online card games" },
+      {
+        property: "og:description",
+        content:
+          "Play Charlotte's Web and Stack Attack with friends or solo against AI.",
+      },
+      { property: "og:type", content: "website" },
+    ],
+  }),
   component: Index,
 });
 
@@ -18,8 +34,9 @@ function Index() {
           ArcadiumX, <span className="text-primary">reimagined</span>.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Play Hearts, Spades, Poker and more with friends from anywhere. Create an
-          account, pull up a chair, and deal.
+          Play Charlotte's Web and Stack Attack with friends from anywhere — or
+          jump into a solo match against AI. Create an account, pull up a chair,
+          and deal.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-3">
           <Link
@@ -38,9 +55,18 @@ function Index() {
 
         <div className="mt-24 grid w-full grid-cols-1 gap-6 text-left sm:grid-cols-3">
           {[
-            { title: "Classic games", body: "Hearts, Spades, Rummy, Poker — the games you already know." },
-            { title: "Play with friends", body: "Private tables and quick matchmaking. No downloads." },
-            { title: "Fair & secure", body: "Server-authoritative dealing. Your account is protected by Clerk." },
+            {
+              title: "Distinct card games",
+              body: "Charlotte's Web — a 13-round rummy variant with shifting wilds. Stack Attack — race to empty your stockpile. More games on the way.",
+            },
+            {
+              title: "Friends or AI",
+              body: "Share a 6-character table code to play with friends, or spin up a solo match against AI bots. Table chat included.",
+            },
+            {
+              title: "Fair & secure",
+              body: "Server-authoritative dealing, live leaderboards, and a gamerscore that tracks your progress over time.",
+            },
           ].map((f) => (
             <div key={f.title} className="rounded-lg border border-border bg-card p-6">
               <h3 className="text-base font-semibold text-card-foreground">{f.title}</h3>
