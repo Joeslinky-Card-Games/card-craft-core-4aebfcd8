@@ -30,6 +30,7 @@ export function PlayingCard({
   onClick,
   className = "",
   tint,
+  meldContext,
 }: {
   id: string;
   wildRank?: string | null;
@@ -39,9 +40,14 @@ export function PlayingCard({
   onClick?: () => void;
   className?: string;
   tint?: "meld" | "new" | null;
+  meldContext?: string[];
 }) {
   const c = parseCard(id);
-  const wild = isWild(id, wildRank);
+  const usedAsNatural =
+    meldContext && !c.joker && wildRank && c.rank === wildRank
+      ? isCardUsedAsNatural(id, meldContext, wildRank)
+      : false;
+  const wild = isWild(id, wildRank) && !usedAsNatural;
   const tintBg =
     tint === "new"
       ? "border-sky-300 bg-gradient-to-br from-sky-100 to-sky-300 shadow-[0_2px_6px_rgba(0,0,0,0.35),inset_0_0_0_2px_rgba(56,189,248,0.55)]"
