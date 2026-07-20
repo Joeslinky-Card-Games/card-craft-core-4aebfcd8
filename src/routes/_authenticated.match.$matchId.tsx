@@ -1051,22 +1051,31 @@ function TableArea({
 function Avatar({ name, userId, imageUrl, size = "md" }: { name: string; userId: string; imageUrl?: string | null; size?: "sm" | "md" }) {
   const hue = avatarHue(userId);
   const dim = size === "sm" ? "h-7 w-7 text-[10px]" : "h-11 w-11 text-sm";
-  if (imageUrl) {
-    return (
-      <img
+  const openProfile = useOpenProfile();
+  const inner = imageUrl ? (
+    <img
         src={imageUrl}
         alt={name}
         className={`${dim} rounded-full object-cover shadow-inner ring-2 ring-black/30`}
       />
-    );
-  }
-  return (
+  ) : (
     <div
       className={`flex ${dim} items-center justify-center rounded-full font-bold text-white shadow-inner ring-2 ring-black/30`}
       style={{ background: `linear-gradient(135deg, hsl(${hue} 65% 45%), hsl(${(hue + 40) % 360} 65% 30%))` }}
     >
       {initialsOf(name)}
     </div>
+  );
+  if (!openProfile || !userId) return inner;
+  return (
+    <button
+      type="button"
+      onClick={() => openProfile({ userId, name, avatarUrl: imageUrl ?? null })}
+      className="rounded-full transition hover:scale-105 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+      title={`View ${name}'s profile`}
+    >
+      {inner}
+    </button>
   );
 }
 
