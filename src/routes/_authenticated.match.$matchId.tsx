@@ -884,7 +884,7 @@ function GameView({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                    className="group relative z-10 flex items-end after:pointer-events-none after:absolute after:inset-x-1 after:-bottom-2 after:h-[3px] after:rounded-full after:bg-amber-300/60"
+                    className="group relative z-10 flex items-end"
                     title={`Meld #${mi + 1}`}
                   >
                     {meld.map((c, i) => (
@@ -892,7 +892,11 @@ function GameView({
                         key={c}
                         layoutId={`card-${c}`}
                         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                        className={`relative ${i === 0 ? "" : "-ml-10 sm:-ml-14"}`}
+                        className={`relative ${i === 0 ? "" : "-ml-10 sm:-ml-14"} ${
+                          newCardId === c
+                            ? "drop-shadow-[0_0_10px_rgba(96,165,250,0.95)]"
+                            : "drop-shadow-[0_0_8px_rgba(251,191,36,0.65)]"
+                        }`}
                         style={{ zIndex: i }}
                       >
                         <PlayingCard
@@ -906,12 +910,6 @@ function GameView({
                   </motion.div>
                   );
                 })}
-                {arrangement.melds.length > 0 && orderedUnmelded.length > 0 && (
-                  <div
-                    aria-hidden
-                    className="mx-1 h-20 w-px shrink-0 self-center bg-white/20 sm:h-28"
-                  />
-                )}
                 <DndContext
                   sensors={dragSensors}
                   collisionDetection={closestCenter}
@@ -926,6 +924,7 @@ function GameView({
                         index={i}
                         size="lg"
                         onClick={() => handleCardClick(c)}
+                        isNew={newCardId === c}
                       />
                     ))}
                   </SortableContext>
