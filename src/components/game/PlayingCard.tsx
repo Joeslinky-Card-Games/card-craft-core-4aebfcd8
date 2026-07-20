@@ -1,4 +1,5 @@
 import { parseCard, suitSymbol, rankLabel, isRedSuit, isWild } from "@/lib/game/cards";
+import { isCardUsedAsNatural } from "@/lib/game/melds";
 
 type Size = "sm" | "md" | "lg";
 
