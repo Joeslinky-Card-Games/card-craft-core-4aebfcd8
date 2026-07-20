@@ -658,7 +658,7 @@ function GameView({
 
   return (
     <main
-      className="relative isolate min-h-[calc(100vh-4rem)] min-h-[calc(100dvh-4rem)] w-full overflow-x-hidden"
+      className="relative isolate min-h-[calc(100vh-4rem-1px)] min-h-[calc(100dvh-4rem-1px)] w-full overflow-x-hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       {/* Room: back wall */}
