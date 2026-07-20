@@ -906,6 +906,7 @@ function GameView({
                           size="lg"
                           onClick={() => handleCardClick(c)}
                           tint={newCardId === c ? "new" : "meld"}
+                          meldContext={meld}
                         />
                       </motion.div>
                     ))}
@@ -1349,7 +1350,7 @@ function LaidMeldsDialog({
               <div key={i} className="rounded-lg bg-emerald-900/50 px-2 py-1 ring-1 ring-amber-300/40">
                 <div className="flex -space-x-6 sm:-space-x-8">
                   {orderMeldForDisplay(meld, wildRank).map((c) => (
-                    <PlayingCard key={c} id={c} wildRank={wildRank} />
+                    <PlayingCard key={c} id={c} wildRank={wildRank} meldContext={meld} />
                   ))}
                 </div>
               </div>
@@ -1364,9 +1365,9 @@ function LaidMeldsDialog({
             <div className="flex flex-wrap items-start justify-center gap-3">
               {handMelds.map((meld, i) => (
                 <div key={i} className="rounded-lg bg-emerald-900/30 px-2 py-1 ring-1 ring-white/20">
-                  <div className="flex -space-x-6 sm:-space-x-8">
+                <div className="flex -space-x-6 sm:-space-x-8">
                     {orderMeldForDisplay(meld, wildRank).map((c) => (
-                      <PlayingCard key={c} id={c} wildRank={wildRank} />
+                      <PlayingCard key={c} id={c} wildRank={wildRank} meldContext={meld} />
                     ))}
                   </div>
                 </div>
@@ -1833,12 +1834,12 @@ function GoOutOptionsPicker({
                         key={mi}
                         className="flex items-end rounded-lg bg-emerald-900/60 px-1.5 py-1 ring-1 ring-emerald-400/40"
                       >
-                        {meld.map((c, i) => (
+                          {meld.map((c, i) => (
                           <div
                             key={c}
                             style={{ marginLeft: i === 0 ? 0 : -28, zIndex: i }}
                           >
-                            <PlayingCard id={c} wildRank={wildRank} size="sm" />
+                            <PlayingCard id={c} wildRank={wildRank} size="sm" meldContext={meld} />
                           </div>
                         ))}
                       </div>
