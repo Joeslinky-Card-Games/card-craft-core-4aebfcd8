@@ -85,7 +85,15 @@ function GamerscoreChart({ history }: { history: { at: string; delta: number }[]
       <text x={(padL + w - padR) / 2} y={h - 2} textAnchor="middle" fontSize="10" fill="currentColor" fillOpacity="0.55">
         Date
       </text>
-      <text x={10} y={padT + 2} textAnchor="start" fontSize="10" fill="currentColor" fillOpacity="0.55">
+      <text
+        x={-(h / 2)}
+        y={10}
+        transform="rotate(-90)"
+        textAnchor="middle"
+        fontSize="10"
+        fill="currentColor"
+        fillOpacity="0.55"
+      >
         Score
       </text>
     </svg>
