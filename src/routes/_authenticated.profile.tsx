@@ -49,6 +49,12 @@ function GamerscoreChart({ history }: { history: { at: string; delta: number }[]
     return points[idx];
   });
   const yTicks = [minY, minY + spanY / 2, maxY];
+  const fmtFull = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime())
+      ? ""
+      : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  };
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="h-44 w-full" role="img" aria-label="Cumulative gamerscore over time">
       <defs>
@@ -79,7 +85,12 @@ function GamerscoreChart({ history }: { history: { at: string; delta: number }[]
       <path d={`${line} L ${px(last.i)} ${zeroY} L ${px(points[0].i)} ${zeroY} Z`} fill="url(#gsFill)" />
       <path d={line} stroke={color} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
       {points.map((p, i) => (
-        <circle key={i} cx={px(p.i)} cy={py(p.cum)} r={i === points.length - 1 ? 3 : 1.5} fill={color} />
+        <g key={i}>
+          <circle cx={px(p.i)} cy={py(p.cum)} r={i === points.length - 1 ? 3 : 1.5} fill={color} />
+          <circle cx={px(p.i)} cy={py(p.cum)} r={10} fill="transparent" style={{ cursor: "pointer" }}>
+            <title>{`${fmtFull(p.at)} — Score: ${p.cum}`}</title>
+          </circle>
+        </g>
       ))}
       {/* axis titles */}
       <text x={(padL + w - padR) / 2} y={h - 2} textAnchor="middle" fontSize="10" fill="currentColor" fillOpacity="0.55">
