@@ -97,6 +97,7 @@ export type MatchView = Match & {
   winner?: string;
   chatMessages?: ChatMessage[];
   playAgain?: string[];
+  readyNextRound?: string[];
   // ---- Stack Attack ----
   stocks?: Record<string, string[]>;
   stockCounts?: Record<string, number>;

@@ -19,8 +19,44 @@ exports.handler = withAuth(async (event, { userId }) => {
     if (match.status !== "round-complete") return badRequest("Round is not complete");
 
     const expectedVersion = match.version ?? 0;
-    let next = engines.nextRound(match);
+
+    // Ready-up voting: every human player must click "Ready" before the
+    // round summary dismisses and the next round deals. AI players are
+    // considered ready automatically.
+    const aiSet = new Set(Array.isArray(match.aiPlayers) ? match.aiPlayers : []);
+    const humans = match.players.filter((p) => !aiSet.has(p));
+    const ready = Array.isArray(match.readyNextRound) ? match.readyNextRound.slice() : [];
+    if (!ready.includes(userId)) ready.push(userId);
+    const allReady = humans.every((p) => ready.includes(p));
+
+    let next;
+    if (!allReady) {
+      next = withRefreshedTtl({
+        ...match,
+        readyNextRound: ready,
+        version: expectedVersion + 1,
+      });
+      try {
+        await ddb.send(
+          new PutCommand({
+            TableName: tables.matches,
+            Item: next,
+            ConditionExpression: "version = :v",
+            ExpressionAttributeValues: { ":v": expectedVersion },
+          })
+        );
+      } catch (err) {
+        if (err.name === "ConditionalCheckFailedException") {
+          return badRequest("Stale match state, please retry");
+        }
+        throw err;
+      }
+      return ok(engines.redactForUser(next, userId));
+    }
+
+    next = engines.nextRound(match);
     next.version = expectedVersion + 1;
+    next.readyNextRound = [];
     next = withRefreshedTtl(next);
     const shouldRecordStats = next.status === "complete" && !match.statsRecorded;
     if (shouldRecordStats) next.statsRecorded = true;

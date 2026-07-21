@@ -1469,6 +1469,11 @@ function RoundSummary({
   const votes = new Set(match.playAgain ?? []);
   const myVote = votes.has(userId);
   const votedCount = match.players.filter((p) => votes.has(p)).length;
+  const aiSet = new Set(match.aiPlayers ?? []);
+  const humans = match.players.filter((p) => !aiSet.has(p));
+  const ready = new Set(match.readyNextRound ?? []);
+  const myReady = ready.has(userId);
+  const readyCount = humans.filter((p) => ready.has(p)).length;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <motion.div
@@ -1543,13 +1548,37 @@ function RoundSummary({
               </button>
             </>
           ) : (
-            <button
-              disabled={pending}
-              onClick={onNext}
-              className="rounded-md bg-amber-400 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-amber-300 disabled:opacity-40"
-            >
-              {pending ? "Starting…" : "Start next round"}
-            </button>
+            <>
+              <div className="mr-auto text-left text-xs text-white/70">
+                <div className="font-semibold uppercase tracking-widest text-amber-200/70">
+                  Ready — {readyCount}/{humans.length}
+                </div>
+                <ul className="mt-1 space-y-0.5">
+                  {humans.map((p) => (
+                    <li key={p} className="flex items-center gap-1.5">
+                      <span
+                        className={
+                          ready.has(p)
+                            ? "inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"
+                            : "inline-block h-1.5 w-1.5 rounded-full bg-white/25"
+                        }
+                      />
+                      <span className={ready.has(p) ? "text-emerald-200" : "text-white/60"}>
+                        {displayName(match, p, userId)}
+                        {ready.has(p) ? " · ready" : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                disabled={pending || myReady}
+                onClick={onNext}
+                className="rounded-md bg-amber-400 px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-amber-300 disabled:opacity-50"
+              >
+                {myReady ? "Waiting for others…" : pending ? "Readying…" : "Ready"}
+              </button>
+            </>
           )}
         </div>
       </motion.div>
