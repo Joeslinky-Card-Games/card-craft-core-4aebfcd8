@@ -1508,7 +1508,7 @@ function RoundSummary({
             ))}
           </tbody>
         </table>
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-6 flex items-start justify-end gap-2">
           {complete ? (
             <>
               <div className="mr-auto text-left text-xs text-white/70">
