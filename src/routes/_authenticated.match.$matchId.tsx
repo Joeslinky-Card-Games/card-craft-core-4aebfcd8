@@ -407,7 +407,18 @@ function GameView({
   const order = match._order ?? match.players;
   const currentUser = order[(match.turn ?? 0) % order.length];
   const isMyTurn = currentUser === userId;
-  const myHand = match.hands?.[userId] ?? [];
+  // If the viewer has already gone out this round their real hand is empty,
+  // but we want to keep displaying the cards they laid down so the seat
+  // isn't suddenly blank. Synthesize a hand from their laid melds.
+  const rawHand = match.hands?.[userId] ?? [];
+  const myLaidMelds = match.laidMelds?.[userId];
+  const myHand = useMemo(() => {
+    if (rawHand.length === 0 && myLaidMelds && myLaidMelds.length > 0) {
+      return myLaidMelds.flat();
+    }
+    return rawHand;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawHand.join("|"), myLaidMelds ? myLaidMelds.map((m) => m.join(",")).join("|") : ""]);
   const sorted = useMemo(() => sortHand(myHand, match.wildRank), [myHand, match.wildRank]);
   const wildRank = match.wildRank ?? null;
 
@@ -1488,6 +1499,8 @@ function RoundSummary({
   const ready = new Set(match.readyNextRound ?? []);
   const myReady = ready.has(userId);
   const readyCount = humans.filter((p) => ready.has(p)).length;
+  const wildRank = match.wildRank ?? null;
+  const [inspecting, setInspecting] = useState<string | null>(null);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <motion.div
@@ -1515,7 +1528,16 @@ function RoundSummary({
           <tbody>
             {sorted.map((p) => (
               <tr key={p} className="border-t border-white/10">
-                <td className="py-1.5">{displayName(match, p, userId)}</td>
+                <td className="py-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setInspecting(p)}
+                    className="rounded text-left text-amber-100 underline decoration-dotted decoration-amber-300/50 underline-offset-2 hover:text-amber-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-300"
+                    title={`View ${displayName(match, p, userId)}'s hand`}
+                  >
+                    {displayName(match, p, userId)}
+                  </button>
+                </td>
                 <td className="text-white/80">{deltas[p] ?? 0}</td>
                 <td className="font-semibold text-amber-200">{scores[p] ?? 0}</td>
               </tr>
@@ -1596,6 +1618,15 @@ function RoundSummary({
           )}
         </div>
       </motion.div>
+      {inspecting && (
+        <LaidMeldsDialog
+          name={displayName(match, inspecting, userId)}
+          laidMelds={match.laidMelds?.[inspecting]}
+          hand={match.hands?.[inspecting]}
+          wildRank={wildRank}
+          onClose={() => setInspecting(null)}
+        />
+      )}
     </div>
   );
 }
