@@ -959,7 +959,7 @@ function GameView({
                 </DndContext>
               </AnimatePresence>
               {sorted.length === 0 && <p className="self-center text-sm text-white/60">No cards in hand.</p>}
-              {sorted.length > 0 && unmelded.length === 0 && displayMelds.length > 0 && (
+              {sorted.length > 0 && unmelded.length === 0 && displayMelds.length > 0 && !viewerDone && (
                 canLayDown ? (
                   <p className="self-center text-sm text-amber-200/80">All cards melded — lay down to go out.</p>
                 ) : canDiscard ? (
@@ -1353,7 +1353,7 @@ function LaidMeldsDialog({
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-serif text-lg font-bold text-amber-100 sm:text-xl">{name}'s hand</h2>
+            <h2 className="font-serif text-lg font-bold text-amber-100 sm:text-xl">{name === "You" ? "Your hand" : `${name}'s hand`}</h2>
             <p className="text-[11px] uppercase tracking-wider text-white/60">
               {laidMelds && laidMelds.length > 0
                 ? `${laidMelds.length} meld${laidMelds.length === 1 ? "" : "s"} laid down`
